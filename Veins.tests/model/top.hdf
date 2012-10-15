@@ -1,0 +1,16 @@
+Title = Veins test page
+Navigation {
+    0 {
+        Name = Home
+        URL = /
+    }
+    1 {
+        Name = Session
+        URL = /session/
+    }
+    2 {
+        Name = Request
+        URL = /request/
+    }
+}
+footer = copyright (c) 2012 Konoha Project

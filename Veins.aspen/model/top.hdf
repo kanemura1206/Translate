@@ -1,0 +1,24 @@
+Title = Aspen
+Description = Online Konoha development environment
+Header {
+    Title = Aspen
+    Navigation {
+        0 {
+            Name = About
+            URL = /about/
+        }
+        1 {
+            Name = Demo
+            URL = /demo
+        }
+        2 {
+            Name = Kimio
+            URL = /kimio
+        }
+        3 {
+            Name = Doly
+            URL = /0001_Midori_Sugaya
+        }
+    }
+}
+Copyright = copyright &copy; 2012 Konoha Project

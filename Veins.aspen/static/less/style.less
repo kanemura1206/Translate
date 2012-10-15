@@ -1,0 +1,95 @@
+@import "bootstrap/bootstrap.less";
+
+body {
+  padding-top: 60px;
+  /*padding-left: 30px;*/
+  /*padding-right: 30px;*/
+  padding-bottom: 10px;
+}
+
+@import "bootstrap/responsive.less";
+
+
+/* ===== Primary Styles ========================================================
+   Author:
+    2011 chenji <wakamori111 at gmail.com> @chen_ji on twitter
+   ========================================================================== */
+
+@import "http://localhost/~chen_ji/aspen/js/libs/CodeMirror-2.22/lib/codemirror.css";
+
+.CodeMirror {
+  border: 1px solid #333;
+}
+
+.hideform {
+  margin: 0px;
+}
+
+#resultframe {
+  width: 100%;
+  height: 300px;
+  border: 1px solid #333;
+}
+
+.errorline {
+  background: #f2dede !important;
+}
+
+.infoline {
+  background: #d9edf7 !important;
+}
+
+.warningline {
+  background: #fcf8e3 !important;
+}
+
+.slim-top {
+  margin-top: 0px;
+}
+
+div.dataTables_length label {
+    float: left;
+    text-align: left;
+}
+
+div.dataTables_length select {
+    width: 75px;
+}
+
+div.dataTables_filter label {
+    float: right;
+}
+
+div.dataTables_info {
+    padding-top: 8px;
+}
+
+div.dataTables_paginate {
+    float: right;
+    margin: 0;
+}
+
+table.table {
+    clear: both;
+    margin-bottom: 6px !important;
+}
+
+table.table thead .sorting,
+table.table thead .sorting_asc,
+table.table thead .sorting_desc,
+table.table thead .sorting_asc_disabled,
+table.table thead .sorting_desc_disabled {
+    cursor: pointer;
+    *cursor: hand;
+}
+
+table.table thead .sorting { background: url('http://konoha.ubicg.ynu.ac.jp/aspen/static/img/sort_both.png') no-repeat center right; }
+table.table thead .sorting_asc { background: url('http://konoha.ubicg.ynu.ac.jp/aspen/static/img/sort_asc.png') no-repeat center right; }
+table.table thead .sorting_desc { background: url('http://konoha.ubicg.ynu.ac.jp/aspen/static/img/sort_desc.png') no-repeat center right; }
+
+table.table thead .sorting_asc_disabled { background: url('http://konoha.ubicg.ynu.ac.jp/aspen/static/img/sort_asc_disabled.png') no-repeat center right; }
+table.table thead .sorting_desc_disabled { background: url('http://konoha.ubicg.ynu.ac.jp/aspen/static/img/sort_desc_disabled.png') no-repeat center right; }
+
+table.dataTable th:active {
+    outline: none;
+}

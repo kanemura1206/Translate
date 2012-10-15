@@ -43,6 +43,7 @@ import("konoha.class");
 import("konoha.new");
 import("konoha.date");
 import("konoha.float");
+import("konoha.exception");
 import("libuuid");
 const Path = String;
 
@@ -283,7 +284,7 @@ class Model
             for (int i = 0; i < keys.getSize(); i++) {
                 String key = keys[i];
                 String value = escapeSqlValue(param[key]);
-                if (i < |keys| - 1) {
+                if (i < keys.getSize() - 1) {
                     query += key + " = " + value + " and ";
                 }
                 else {
@@ -431,7 +432,7 @@ class Model
             keys = param.keys();
             for (i = 0; i < keys.getSize(); i++) {
                 String key = keys[i];
-                if (i < |keys| - 1) {
+                if (i < .keys.getSize() - 1) {
                     query += key.escapeSql() + " = " + escapeSqlValue(param.get(key)) + " and ";
                 }
                 else {
@@ -596,13 +597,13 @@ class User
             try {
                 String perms = m[0]["permissions"];
                 p = perms.split(",");
-            } catch (Exception!! e) {
+            } catch (Exception e) {
                 p = [];
             }
             try {
                 String groups = m[0]["groups"];
                 g = groups.split(",");
-            } catch (Exception!! e) {
+            } catch (Exception e) {
                 g = [];
             }
             return new User(id, name, p, g);
@@ -624,7 +625,7 @@ class User
         Map[] m = user.get("id", {
             "name": name
         });
-        if (|m| == 1) {
+        if (m.getSize() == 1) {
             if (isDebug()) {
                 System.p("user '" + name + "' exists");
             }
@@ -795,7 +796,7 @@ class Template
     }
 }
 
-@Expando class HttpRequest
+@Expando class HttpRequest //TODO Expand
 {
     String path;
     String method;
@@ -809,7 +810,7 @@ class Template
         Map[String] m = new Map[String]();
         foreach (String param in query.split("&")) {
             String[] k_v = param.split("=");
-            if (|k_v| == 2 && k_v[1] != null) {
+            if (k_v.getSize() == 2 && k_v[1] != null) {
                 m[k_v[0]] = k_v[1].convert(to:durl);
             }
             else {
@@ -853,7 +854,7 @@ class HttpResponse
 
     String[] get(String header) {
         String[] ret = [];
-        foreach (Tuple[String,String] t in _h) {
+        foreach (Tuple[String,String] t in this.h) {
             if (t[0] == header) {
                 ret.add(t[1]);
             }
@@ -863,7 +864,7 @@ class HttpResponse
 
     String[] keys(void) {
         String[] keys = [];
-        foreach (Tuple[String,String] t in _h) {
+        foreach (Tuple[String,String] t in this.h) {
             if (not (t[0] in? keys)) {
                 keys.add(t[0]);
             }
@@ -907,16 +908,16 @@ class HttpResponseRedirect extends HttpResponse
 
 @Singleton class Url
 {
-    Tuple<Regex,Func<HttpRequest,String[]=>HttpResponse>>[] getPatterns() {
-        Tuple<Regex,Func<HttpRequest,String[]=>HttpResponse>>[] patterns = $veins.urlpatterns;
+    Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]][] getPatterns() {
+    	Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]][] patterns = VEINS.urlpatterns;
         if (patterns == null) {
-            Veins.urlpatterns = new Tuple<Regex,Func<HttpRequest,String[]=>HttpResponse>>[0];
+        	VEINS.urlpatterns = new Tuple<Regex,Func<HttpRequest,String[]=>HttpResponse>>[0];
         }
-        return $veins.urlpatterns;
+        return VEINS.urlpatterns;
     }
 
-    void setPatterns(Tuple<Regex,Func<HttpRequest,String[]=>HttpResponse>>[] patterns) {
-        Veins.urlpatterns = patterns;
+    void setPatterns(Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]][] patterns) {
+    	VEINS.urlpatterns = patterns;
     }
 }
 
@@ -924,7 +925,7 @@ class HttpResponseRedirect extends HttpResponse
 {
     @Virtual HttpResponse hookRequest(HttpRequest req);
     @Virtual HttpResponse hookHandler(HttpRequest req,
-            Func<HttpRequest,String[]=>HttpResponse> callback, String[] args);
+            Func[HttpRequest,HttpResponse,String[]] callback, String[] args);
     @Virtual HttpResponse hookResponse(HttpRequest req, HttpResponse res);
     @Virtual HttpResponse hookException(HttpRequest req, Exception e);
 }
@@ -1043,7 +1044,7 @@ class Session
     }
 
     HttpResponse hookHandler(HttpRequest req,
-    		Func[HttpResponse[HttpRequest,String[]]] callback, String[] args) { //TODO Func
+    		Func[HttpResponse,HttpRequest,String[]] callback, String[] args) { //TODO Func
         if (isDebug()) {
             System.p("hook handler: " + req + callback + args);
         }
@@ -1058,7 +1059,7 @@ class Session
                 req.cookies["KSESSIONID"] != req.session.origname) {
             if (isDebug()) {
                 System.p("old session: " + req.cookies["KSESSIONID"]);
-                System.p("new session: " + req.session.fname.convert(to:SHA256));
+                System.p("new session: " + req.session.fname/*.convert(to:SHA256)*/);
             }
             //Date now = new Date();
             //if (now.day < 15) {
@@ -1107,8 +1108,8 @@ class Session
     }
 
     HttpResponse hookHandler(HttpRequest req,
-    		Func[][HttpResponse[HttpRequest,String[]]] callback, String[] args) { //TODO Func
-        Map m = {};
+    		Func[HttpResponse,HttpRequest,String[]]] callback, String[] args) { //TODO Func
+        Map m = new Map();
         m["handler"] = callback.name;
         String argstr = "[";
         foreach (String arg in args) {
@@ -1145,12 +1146,12 @@ class Session
 
 HttpRequest g_req;
 HttpResponse g_res;
-Func[HttpResponse[HttpRequest,String[]]] g_handler;
+Func[HttpResponse,HttpRequest,String[]]] g_handler;
 String[] g_args;
-Exception!! g_e; //TODO
+Exception g_e;
 
 @Public String Wsgi.application(Map[String] environ,
-        Func<String,Tuple<String,String>[]> start_response) //TODO Tuple
+        Func[String,Tuple[String,String][]] start_response)
 {
     // initialize global variables
     g_req = null;
@@ -1185,7 +1186,7 @@ Exception!! g_e; //TODO
             }
         }
         if (g_res == null) {
-            foreach (Tuple<Regex,Func<HttpRequest,String[]=>HttpResponse>> t in Url.getPatterns()) { //TODO Tuple
+            foreach (Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]] t in Url.getPatterns()) { //TODO Tuple
                 if (path.search(t[0]) >= 0) {
                     g_args = path.split("/");
                     if (g_args.getSize() > 0) {
@@ -1222,7 +1223,7 @@ Exception!! g_e; //TODO
                 eval("g_res = " + middleware + ".hookResponse(g_req, g_res);");
             }
         }
-    } catch (Exception!! e) { //TODO
+    } catch (Exception e) {
         g_e = e;
         foreach (String middleware in middlewares) {
             if (isDebug()) {
@@ -1235,7 +1236,7 @@ Exception!! g_e; //TODO
         }
     }
     if (g_res != null) {
-        Tuple<String,String>[] headers = g_res.h; //TODO Tuple
+        Tuple[String,String][] headers = g_res.h;
         if (not "Content-Type" in? g_res.keys()) {
             headers.add(("Content-Type", "text/html; charset=UTF-8"));
         }
@@ -1265,4 +1266,20 @@ Exception!! g_e; //TODO
     }
     start_response("404 Not Found", [("Content-Type", "text/html; charset=UTF-8")]);
     return "";
+}
+
+class Tuple {
+	Array[String] base;
+	Tuple(String a, String b) {
+		base = [a, b];
+	}
+	String get(int index) {
+		if(index == 0) {
+			return base[0];
+		}
+		else if(index == 1) {
+			return base[1];
+		}
+		return null;
+	}
 }
