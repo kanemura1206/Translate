@@ -26,24 +26,18 @@ import java.util.Map;
  *
  ****************************************************************************/
 
-import("konoha.io");
+import("konoha");
+import("konoha.new");
+import("konoha.exception");
+import("konoha.regexp");
+import("konoha.sql");
 import("jansson");
 import("posix.fd");
 import("posix.file");
 import("posix.process");
 import("posix.socket");
 import("posix.thread");
-import("konoha.sql");
 import("dscript.logger");
-import("konoha");
-import("konoha.int");
-import("konoha.array");
-import("konoha.string");
-import("konoha.class");
-import("konoha.new");
-import("konoha.date");
-import("konoha.float");
-import("konoha.exception");
 import("libuuid");
 const Path = String;
 
@@ -99,8 +93,8 @@ String getDatabase(String dbname)
     String engine = dbs[dbname]["engine"];
     if (engine == "mysql") {
         String urn = "mysql://" + dbs[dbname]["user"] + ":" + dbs[dbname]["password"];
-        urn += "@" + dbs[dbname]["host"] + ":" + dbs[dbname]["port"] + "/";
-        urn += dbs[dbname]["name"];
+        urn = url + "@" + dbs[dbname]["host"] + ":" + dbs[dbname]["port"] + "/";
+        urn = url + dbs[dbname]["name"];
         if (isDebug()) {
             System.p("urn: " + urn);
         }
@@ -238,33 +232,33 @@ class Model
                 System.throw(new Exception("scheme['" + key + "']: Unsupported type is given."));
             }
             if (i < keys.getSize() - 1) {
-                query += column + " " + type + ", ";
+                query = query + column + " " + type + ", ";
             }
             else {
-                query += column + " " + type;
+                query = query + column + " " + type;
                 if (primary_keys.getSize() > 0) {
-                    query += ", primary key(";
-                    for (int j = 0; j < primary_keys.getSize; j++) {
+                    query = query + ", primary key(";
+                    for (int j = 0; j < primary_keys.getSize(); j++) {
                         String primary_key = primary_keys[j].escapeSql();
                         if (j < primary_keys.getSize() - 1) {
                             if (isMysql() && types[primary_key] == "text") {
-                                query += primary_key + "(128), ";
+                                query = query + primary_key + "(128), ";
                             }
                             else {
-                                query += primary_key + ", ";
+                                query = query + primary_key + ", ";
                             }
                         }
                         else {
                             if (isMysql() && types[primary_key] == "text") {
-                                query += primary_key + "(128))";
+                                query = query + primary_key + "(128))";
                             }
                             else {
-                                query += primary_key + ")";
+                                query = query + primary_key + ")";
                             }
                         }
                     }
                 }
-                query += ")";
+                query = query + ")";
             }
         }
         if (isDebug()) {
@@ -279,16 +273,16 @@ class Model
         column = column.escapeSql();
         String query = "select " + column + " from " + name;
         if (param != null && param.getSize() > 0) {
-            query += " where ";
+            query = query + " where ";
             String[] keys = param.keys();
             for (int i = 0; i < keys.getSize(); i++) {
                 String key = keys[i];
                 String value = escapeSqlValue(param[key]);
                 if (i < keys.getSize() - 1) {
-                    query += key + " = " + value + " and ";
+                    query = query + key + " = " + value + " and ";
                 }
                 else {
-                    query += key + " = " + value;
+                    query = query + key + " = " + value;
                 }
             }
         }
@@ -329,28 +323,28 @@ class Model
             String key = keys[i];
             values.add(escapeSqlValue(record[key]));
             if (i < keys.getSize() - 1) {
-                query += key.escapeSql() + ", ";
+                query = query + key.escapeSql() + ", ";
             }
             else {
-                query += key.escapeSql() + ") values(";
+                query = query + key.escapeSql() + ") values(";
             }
         }
         for (int i = 0; i < values.getSize(); i++) {
             if (i < values.getSize() - 1) {
-                query += values[i] + ", ";
+                query = query + values[i] + ", ";
             }
             else {
-                query += values[i] + ")";
+                query = query + values[i] + ")";
             }
         }
         if (isMysql()) {
-            query += " on duplicate key update ";
+            query = query + " on duplicate key update ";
             for (int i = 0; i < keys.getSize(); i++) {
                 if (i < keys.getSize() - 1) {
-                    query += keys[i] + " = " + values[i] + ", ";
+                    query = query + keys[i] + " = " + values[i] + ", ";
                 }
                 else {
-                    query += keys[i] + " = " + values[i];
+                    query = query + keys[i] + " = " + values[i];
                 }
             }
         }
@@ -371,18 +365,18 @@ class Model
             String key = keys[i];
             values.add(escapeSqlValue(record.get(key));
             if (i < keys.getSize() - 1) {
-                query += key.escapeSql() + ", ";
+                query = query + key.escapeSql() + ", ";
             }
             else {
-                query += key.escapeSql() + ") values(";
+                query = query + key.escapeSql() + ") values(";
             }
         }
         for (int i = 0; i < values.getSize(); i++) {
             if (i < values.getSize() - 1) {
-                query += values[i] + ", ";
+                query = query + values[i] + ", ";
             }
             else {
-                query += values[i] + ")";
+                query = query + values[i] + ")";
             }
         }
         if (isDebug()) {
@@ -400,10 +394,10 @@ class Model
         for (int i = 0; i < keys.getSize(); i++) {
             String key = keys[i];
             if (i < keys.getSize() - 1) {
-                query += key.escapeSql() + " = " + escapeSqlValue(record.get(key)) + " and ";
+                query = query + key.escapeSql() + " = " + escapeSqlValue(record.get(key)) + " and ";
             }
             else {
-                query += key.escapeSql() + " = " + escapeSqlValue(record.get(key));
+                query = query + key.escapeSql() + " = " + escapeSqlValue(record.get(key));
             }
         }
         if (isDebug()) {
@@ -421,22 +415,22 @@ class Model
         for (i = 0; i < keys.getSize(); i++) {
             String key = keys[i];
             if (i < keys.getSize() - 1) {
-                query += key.escapeSql() + " = " + escapeSqlValue(record.get(key)) + ", ";
+                query = query + key.escapeSql() + " = " + escapeSqlValue(record.get(key)) + ", ";
             }
             else {
-                query += key.escapeSql() + " = " + escapeSqlValue(record.get(key));
+                query = query + key.escapeSql() + " = " + escapeSqlValue(record.get(key));
             }
         }
         if (param != null && param.getSize() > 0) {
-            query += " where ";
+            query = query + " where ";
             keys = param.keys();
             for (i = 0; i < keys.getSize(); i++) {
                 String key = keys[i];
                 if (i < .keys.getSize() - 1) {
-                    query += key.escapeSql() + " = " + escapeSqlValue(param.get(key)) + " and ";
+                    query = query + key.escapeSql() + " = " + escapeSqlValue(param.get(key)) + " and ";
                 }
                 else {
-                    query += key.escapeSql() + " = " + escapeSqlValue(param.get(key));
+                    query = query + key.escapeSql() + " = " + escapeSqlValue(param.get(key));
                 }
             }
         }
@@ -676,7 +670,7 @@ class User
 
 class TemplateContext
 {
-    Cs cs;
+    /*Cs cs;*/
     String str;
     Path file;
 
@@ -691,14 +685,14 @@ class TemplateContext
         this.file = path;
     }
 
-    void loadSettingValues(Hdf hdf) {
+/*    void loadSettingValues(Hdf hdf) {
         hdf.setValue("STATIC_URL", getStaticUrl());
         hdf.setValue("BASE_URL", getBaseUrl());
         hdf.setValue("hdf.loadpaths.0", getViewDir());
         hdf.setValue("hdf.loadpaths.1", getModelDir());
-    }
+    }*/
 
-    void loadHdf(Hdf hdf) {
+/*    void loadHdf(Hdf hdf) {
         loadSettingValues(hdf);
         if (isDebug()) {
             hdf.writeFile("/tmp/hdf");
@@ -710,27 +704,27 @@ class TemplateContext
         if (file != null) {
             cs.parseFile(file);
         }
-    }
+    }*/
 }
 
 class Template
 {
-    Hdf hdf;
+    /*Hdf hdf;*/
     String buf;
 
     Template(String template) {
-        this.hdf = new Hdf();
+/*        this.hdf = new Hdf();
         if (template != null) {
             hdf.readString(template);
-        }
+        }*/
     }
     
     void set(String key, int value) {
-    	hdf.setIntValue(key, value);
+    	/*hdf.setIntValue(key, value);*/
     }
     
     void set(String key, String value) {
-    	hdf.setValue(key, value.escapeHtml());
+    	/*hdf.setValue(key, value.escapeHtml());*/
     }
     
     void set(String key, Array value) {
@@ -748,40 +742,40 @@ class Template
     }
 
     int getInt(String key) {
-        return hdf.getIntValue(key);
+        return 1/*hdf.getIntValue(key)*/;
     }
 
     String get(String key) {
-        return hdf.getValue(key);
+        return ""/*hdf.getValue(key)*/;
     }
 
     void readFile(Path path) {
         if (!path.startsWith("/")) {
             path = getModelDir() + path;
         }
-        hdf.readFile(path);
+        /*hdf.readFile(path);*/
     }
 
     void readString(String s) {
-        hdf.readString(s);
+        /*hdf.readString(s);*/
     }
 
     int render_cb(String s) {
-        this.buf += s;
-        return Cs.STATUS_OK;
+        this.buf = buf + s;
+        return 1/*Cs.STATUS_OK*/;
     }
 
     String render(TemplateContext context) {
         this.buf = "";
-        context.loadHdf(hdf);
-        context.cs.render(delegate(this, render_cb));
+        /*context.loadHdf(hdf);
+        context.cs.render(delegate(this, render_cb));*/
         return buf;
     }
 
     boolean save(String name) {
         String path = FileStorage.checkName(name);
         if (path == null) return false;
-        hdf.writeFileAtomic(path);
+        /*hdf.writeFileAtomic(path)*/;
         return true;
     }
 
@@ -791,7 +785,7 @@ class Template
         if (System.stat(path) == null) {
             return false;
         }
-        hdf.readFile(path);
+        /*hdf.readFile(path);*/
         return true;
     }
 }
@@ -811,7 +805,7 @@ class Template
         foreach (String param in query.split("&")) {
             String[] k_v = param.split("=");
             if (k_v.getSize() == 2 && k_v[1] != null) {
-                m[k_v[0]] = k_v[1].convert(to:durl);
+                m[k_v[0]] = k_v[1]/*.convert(to:durl)*/;
             }
             else {
                 m[k_v[0]] = "";
@@ -838,7 +832,7 @@ class HttpResponse
 {
     String content;
     int status;
-    Tuple[String,String][] h; //TODO Tuple
+    Tuple[String,String][] h;
 
     HttpResponse(String content, Tuple[String,String][] headers) {
         this.content = content;
@@ -865,7 +859,7 @@ class HttpResponse
     String[] keys(void) {
         String[] keys = [];
         foreach (Tuple[String,String] t in this.h) {
-            if (not (t[0] in? keys)) {
+            if (!((t[0] in? keys))) {
                 keys.add(t[0]);
             }
         }
@@ -876,9 +870,9 @@ class HttpResponse
         path = (path == null) ? "/" : path;
         String cookie = key + "=" + value + "; ";
         if (expires != null && expires != "") {
-            cookie += "expires=" + expires + "; ";
+            cookie = cookie + "expires=" + expires + "; ";
         }
-        cookie += "path=" + path + ";";
+        cookie = cookie + "path=" + path + ";";
         this["Set-Cookie"] = cookie;
         if (isDebug()) {
             System.p("Set-Cookie: " + cookie);
@@ -890,7 +884,7 @@ class HttpResponse
         String cookie = key + "=dummy; ";
         Date past = new Date();
         past.setYear(1970);
-        cookie += "expires=" + past.toUTCString();
+        cookie = cookie + "expires=" + past.toUTCString();
         this["Set-Cookie"] = cookie;
         if (isDebug()) {
             System.p("Delete-Cookie: " + cookie);
@@ -911,7 +905,7 @@ class HttpResponseRedirect extends HttpResponse
     Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]][] getPatterns() {
     	Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]][] patterns = VEINS.urlpatterns;
         if (patterns == null) {
-        	VEINS.urlpatterns = new Tuple<Regex,Func<HttpRequest,String[]=>HttpResponse>>[0];
+        	VEINS.urlpatterns = new Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]][0];
         }
         return VEINS.urlpatterns;
     }
@@ -1015,7 +1009,7 @@ class Session
     }
 
     void store() {
-        OutputStream ous = new OutputStream(path); //TODO OutputStream
+        OutputStream ous = new OutputStream(path);
         ous.write(j.stringify()/*.encode(to:xor)*/);
         ous.close();
     }
@@ -1044,7 +1038,7 @@ class Session
     }
 
     HttpResponse hookHandler(HttpRequest req,
-    		Func[HttpResponse,HttpRequest,String[]] callback, String[] args) { //TODO Func
+    		Func[HttpResponse,HttpRequest,String[]] callback, String[] args) {
         if (isDebug()) {
             System.p("hook handler: " + req + callback + args);
         }
@@ -1103,21 +1097,21 @@ class Session
         } catch (Exception!! e) {
             m["session"] = "none";
         }
-        System.ntraceNotice("Veins:Request", m);
+        /*System.ntraceNotice("Veins:Request", m);*/
         return null;
     }
 
     HttpResponse hookHandler(HttpRequest req,
-    		Func[HttpResponse,HttpRequest,String[]]] callback, String[] args) { //TODO Func
+    		Func[HttpResponse,HttpRequest,String[]]] callback, String[] args) {
         Map m = new Map();
         m["handler"] = callback.name;
         String argstr = "[";
         foreach (String arg in args) {
-            argstr += arg + ",";
+            argstr = argstr + arg + ",";
         }
-        argstr += "]";
+        argstr = argstr + "]";
         m["args"] = argstr;
-        System.ntraceNotice("Veins:Handler", m); //TODO System.ntraceNotice
+        /*System.ntraceNotice("Veins:Handler", m);*/
         return null;
     }
 
@@ -1125,19 +1119,19 @@ class Session
         Map m = new Map();
         m["status"] = (res.status == 0) ? 200 : res.status;
         foreach (String h in res.keys()) {
-            for (int i = 0; i < |res[h]|; i++) {
-                String key = "header:" + h + "+" + (to String)i;
+            for (int i = 0; i < res[h].getSize(); i++) {
+                String key = "header:" + h + "+" + i.toString();
                 m[key] = res[h][i];
             }
         }
-        System.ntraceNotice("Veins:Response", m); //TODO System.ntraceNotice
+        /*System.ntraceNotice("Veins:Response", m);*/
         return res;
     }
 
     HttpResponse hookException(HttpRequest req, Exception e) {
         Map m = new Map();
         m["message"] = e.toString();
-        System.ntraceFailed("Veins:Exception", m); //TODO System.ntraceNotice
+        /*System.ntraceFailed("Veins:Exception", m);*/
         return null;
     }
 }
@@ -1186,7 +1180,7 @@ Exception g_e;
             }
         }
         if (g_res == null) {
-            foreach (Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]] t in Url.getPatterns()) { //TODO Tuple
+            foreach (Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]] t in Url.getPatterns()) {
                 if (path.search(t[0]) >= 0) {
                     g_args = path.split("/");
                     if (g_args.getSize() > 0) {
@@ -1237,7 +1231,7 @@ Exception g_e;
     }
     if (g_res != null) {
         Tuple[String,String][] headers = g_res.h;
-        if (not "Content-Type" in? g_res.keys()) {
+        if (!("Content-Type" in? g_res.keys())) {
             headers.add(("Content-Type", "text/html; charset=UTF-8"));
         }
         String status = "";
@@ -1256,7 +1250,7 @@ Exception g_e;
         start_response(status, headers);
         return g_res.content;
     }
-    if (not path.endsWith("/")) {
+    if (!(path.endsWith("/"))) {
         String redirect_url = environ["URI"] + "/";
         start_response("302 Found", [
             ("Content-Type", "text/html; charset=UTF-8"),
@@ -1282,4 +1276,14 @@ class Tuple {
 		}
 		return null;
 	}
+}
+
+String InputStream.read() {
+	String ret = "";
+	String s = this.readLine();
+	while(s != null) {
+		ret = ret + s + "\n";
+		s = this.readLine();
+	}
+	return ret;
 }

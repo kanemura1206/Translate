@@ -5,14 +5,19 @@
 /* It must be called before veins package is loaded. */
 import("/Users/chen_ji/Devel/git/Veins/tests/settings.k");
 import("konoha");
-import("konoha.string");
-import("konoha.array");
-import("konoha.class");
-import("konoha.new");
-import("konoha.io");
-import("konoha.int");
-import("konoha.map");
 import("konoha.veins");
+import("konoha.new");
+import("konoha.exception");
+import("konoha.regexp");
+import("konoha.sql");
+import("jansson");
+import("posix.fd");
+import("posix.file");
+import("posix.process");
+import("posix.socket");
+import("posix.thread");
+import("dscript.logger");
+import("libuuid");
 
 HttpResponse document(HttpRequest req, String[] args)
 {

@@ -6,20 +6,25 @@
 import("/Users/chen_ji/Devel/git/Veins/aspen/settings.k");
 
 import("konoha");
-import("konoha.string");
-import("konoha.array");
-import("konoha.class");
-import("konoha.new");
-import("konoha.io");
-import("konoha.int");
-import("konoha.map");
 import("konoha.veins");
+import("konoha.new");
+import("konoha.exception");
+import("konoha.regexp");
+import("konoha.sql");
+import("jansson");
+import("posix.fd");
+import("posix.file");
+import("posix.process");
+import("posix.socket");
+import("posix.thread");
+import("dscript.logger");
+import("libuuid");
 
-if (not defined TRACE_USER) {
+if (!(defined TRACE_USER)) {
     TRACE_USER = true;
 }
 
-if (not defined Git) {
+if (!(defined Git)) {
     class Git
     {
         String path;
@@ -160,11 +165,11 @@ Template getDefaultTemplate(HttpRequest req)
         separator = ",";
     }
     String ret = "";
-    for (int i = 0; i < this.size - 1; i++) {
-        ret += this[i].toString() + separator;
+    for (int i = 0; i < this.getSize() - 1; i++) {
+        ret = ret + this[i].toString() + separator;
     }
-    if (this.size > 0) {
-        ret += this[this.getSize() - 1];
+    if (this.getSize() > 0) {
+        ret = ret + this[this.getSize() - 1];
     }
     return ret;
 }
@@ -205,7 +210,7 @@ HttpResponse login(HttpRequest req, String[] args)
         if (TRACE_USER) {
             Map m = new Map();
             m["id"] = user.name;
-            System.ntraceNotice("Aspen:SignIn", m);
+            /*System.ntraceNotice("Aspen:SignIn", m);*/
         }
     }
     return redirect("/aspen/");
@@ -219,7 +224,7 @@ HttpResponse logout(HttpRequest req, String[] args)
     if (TRACE_USER) {
         Map m = new Map();
         m["id"] = req.session["id"];
-        System.ntraceNotice("Aspen:SignOut", m);
+        /*System.ntraceNotice("Aspen:SignOut", m);*/
     }
     req.session.remove("id");
     return redirect("/aspen/");
@@ -239,10 +244,10 @@ HttpResponse viewer(HttpRequest req, String[] args)
         return null;
     }
     String name = m[0]["name"];
-    String readme = FileStorage.openReadme(args[0], args[1]).read().decode();// TODO
-    String js = FileStorage.openJS(args[0], args[1]).read().decode();
-    String ks = FileStorage.openKS(args[0], args[1]).read().decode();
-    String html = FileStorage.openHTML(args[0], args[1]).read().decode();
+    String readme = FileStorage.openReadme(args[0], args[1]).read();
+    String js = FileStorage.openJS(args[0], args[1]).read();
+    String ks = FileStorage.openKS(args[0], args[1]).read();
+    String html = FileStorage.openHTML(args[0], args[1]).read();
     if (name != null && name != "") {
         tpl["Code.Name"] = name.convert(to:durl);
     }
@@ -285,7 +290,7 @@ HttpResponse viewer(HttpRequest req, String[] args)
         m["id"] = req.session["id"];
         m["target"] = args[0];
         m["watching"] = args[1];
-        System.ntraceNotice("Aspen:Viewer", m);
+        /*System.ntraceNotice("Aspen:Viewer", m);*/
     }
     return new HttpResponse(tpl.render(ctx));
 }
@@ -294,8 +299,8 @@ void reportBug(String user, String id) {
     FileStorage.mkdir("BUGS", 0755);
     Date d = new Date();
     String fname = d.getYear().toString() + d.getMonth().toString() + d.getDay().toString();
-    fname += d.getHours().toString() + d.getMinutes().toString() + d.getSeconds().toString();
-    fname += "_" + user + "_" + id + ".k";
+    fname = fname + d.getHours().toString() + d.getMinutes().toString() + d.getSeconds().toString();
+    fname = fname + "_" + user + "_" + id + ".k";
     OutputStream ous = FileStorage.newFile("BUGS/" + fname);
     InputStream ins = FileStorage.openJS(user, id);
     ous.write(ins.read());
@@ -318,17 +323,17 @@ String compile(InputStream body, String k2jspath, String scriptpath) {
             Json j2 = new Json();
             j2["line"] = reg[2];
             j2["message"] = reg[4];
-            if (not reg[1] == "compiler.k") {
+            if (!(reg[1] == "compiler.k")) {
                 switch (reg[3]) {
-                case "error":
-                    errs.add(j2);
-                    break;
-                case "warning":
-                    warns.add(j2);
-                    break;
-                case "info":
-                    infos.add(j2);
-                    break;
+                	if(reg[3] == "error"){
+                		errs.add(j2);
+                	}
+                	else if(reg[3] == "warning"){
+                		warns.add(j2);
+                	}
+                	else if(reg[3] == "info"){
+                		infos.add(j2);
+                	}
                 }
             }
         }
@@ -380,24 +385,7 @@ HttpResponse konoha2js(HttpRequest req, String[] args)
         if (res.content == "") {
             // a SEGV may occurred on konoha2js
             reportBug(user, id);
-            res.content = """
-function konoha() {
-    this.ERR = "";
-    this.printOUT = function() {};
-    this.printERR = function() {
-        if (this.ERR == "") return;
-        var strings = this.ERR.split("\\n");
-        var body = document.getElementsByTagName('body').item(0);
-        for (var i = 0; i < strings.length; i++) {
-            body.appendChild(document.createTextNode(strings[i]));
-            body.appendChild(document.createElement('br'));
-        }
-    };
-}
-konoha = new konoha();
-function konoha_main() {
-    throw("Compile Error!!: Your script is reported as a reproducible code. Sorry.");
-}""";
+            res.content = "function konoha() {\nthis.ERR = "";\nthis.printOUT = function() {};\nthis.printERR = function() {\nif (this.ERR == "") return;\nvar strings = this.ERR.split(\"\\n\");\nvar body = document.getElementsByTagName('body').item(0);\nfor (var i = 0; i < strings.length; i++) {\nbody.appendChild(document.createTextNode(strings[i]));\nbody.appendChild(document.createElement('br'));\n}\n};\n}\nkonoha = new konoha();\nfunction konoha_main() {\nthrow(\"Compile Error!!: Your script is reported as a reproducible code. Sorry.\");\n}\n";
         }
     }
     else if (requestedType == "html") {
@@ -407,14 +395,14 @@ function konoha_main() {
         //String replacetxt = "</head>";
         InputStream html = FileStorage.openHTML(user, id);
         //res.content += html.read().decode().replace(replacetxt, ret);
-        res.content += html.read().decode();
+        res.content = res.content + html.read();
         html.close();
         if (TRACE_USER) {
             Map m = new Map();
             m["id"] = req.session["id"];
             m["target"] = user;
             m["running"] = id;
-            System.ntraceNotice("Aspen:Konoha2JS", m);
+            /*System.ntraceNotice("Aspen:Konoha2JS", m);*/
         }
     }
     else if (requestedType == "compile") {
@@ -426,7 +414,7 @@ function konoha_main() {
             m["id"] = req.session["id"];
             m["target"] = user;
             m["compiling"] = id;
-            System.ntraceNotice("Aspen:Konoha2JS", m);
+            /*System.ntraceNotice("Aspen:Konoha2JS", m);*/
         }
     }
     else if (requestedType == "javac") {
@@ -453,7 +441,7 @@ function konoha_main() {
         }
         String javapath = FileStorage.root + user + "/javac/" + id + "/" + scriptname;
         System.symlink(scriptpath, javapath);
-        String result = exec(javacpath + " -d " + $TMP_DIR + " " + javapath + " 2>&1");
+        String result = exec(javacpath + " -d " + TMP_DIR + " " + javapath + " 2>&1");
         Json j = new Json();
         if (result != "") {
             j["error"] = true;
@@ -465,12 +453,12 @@ function konoha_main() {
             m["id"] = req.session["id"];
             m["target"] = user;
             m["javacompiling"] = id;
-            System.ntraceNotice("Aspen:Konoha2JS", m);
+            /*System.ntraceNotice("Aspen:Konoha2JS", m);*/
         }
     }
     else if (requestedType == "ks") {
         res["Content-Type"] = "text/plain; charset=UTF-8";
-        res.content = body.read().decode();
+        res.content = body.read();
         body.close();
     }
     else if (requestedType == "memview") {
@@ -486,25 +474,25 @@ function konoha_main() {
             m["id"] = req.session["id"];
             m["target"] = user;
             m["memviewing"] = id;
-            System.ntraceNotice("Aspen:Konoha2JS", m);
+            /*System.ntraceNotice("Aspen:Konoha2JS", m);*/
         }
     }
     else if (requestedType == "download") {
         String name = m[0]["name"];
         if (name != null && name != "") {
             res["Content-Type"] = "text/plain; charset=UTF-8";
-            if (not name.endsWith(".java")) {
+            if (!(name.endsWith(".java"))) {
                 name = name + ".java";
             }
             res["Content-Disposition"] = "attachment; filename=\"" + name + "\"";
-            res.content = body.read().decode();
+            res.content = body.read();
             res["Content-Length"] = (to String)res.content.size;
             if (TRACE_USER) {
                 Map m = new Map();
                 m["id"] = req.session["id"];
                 m["target"] = user;
                 m["downloading"] = id;
-                System.ntraceNotice("Aspen:Konoha2JS", m);
+                /*System.ntraceNotice("Aspen:Konoha2JS", m);*/
             }
         }
     }
@@ -518,7 +506,7 @@ function konoha_main() {
 HttpResponse usertop(HttpRequest req, String[] args)
 {
     String user = args[0];
-    if (not User.hasUser(user)) {
+    if (!(User.hasUser(user))) {
         if (req.session["id"] == user) {
             req.session.remove("id");
         }
@@ -558,7 +546,7 @@ HttpResponse usertop(HttpRequest req, String[] args)
         Map m = new Map();
         m["id"] = req.session["id"];
         m["watching"] = user;
-        System.ntraceNotice("Aspen:User", m);
+        /*System.ntraceNotice("Aspen:User", m);*/
     }
     return new HttpResponse(tpl.render(ctx));
 }
@@ -610,7 +598,7 @@ HttpResponse signup(HttpRequest req, String[] args)
             Map m = new Map();
             m["username"] = username;
             m["email"] = email;
-            System.ntraceFailed("Aspen:SignUp", m);
+            /*System.ntraceFailed("Aspen:SignUp", m);*/
         }
         return new HttpResponse(tpl.render(ctx));
     }
@@ -627,7 +615,7 @@ HttpResponse signup(HttpRequest req, String[] args)
             Map m = new Map();
             m["username"] = username;
             m["email"] = email;
-            System.ntraceFailed("Aspen:SignUp", m);
+            /*System.ntraceFailed("Aspen:SignUp", m);*/
         }
         return new HttpResponse(tpl.render(ctx));
     }
@@ -644,7 +632,7 @@ HttpResponse signup(HttpRequest req, String[] args)
             Map m = new Map();
             m["username"] = username;
             m["email"] = email;
-            System.ntraceFailed("Aspen:SignUp", m);
+            /*System.ntraceFailed("Aspen:SignUp", m);*/
         }
         return new HttpResponse(tpl.render(ctx));
     }
@@ -662,7 +650,7 @@ HttpResponse signup(HttpRequest req, String[] args)
             Map m = new Map();
             m["username"] = username;
             m["email"] = email;
-            System.ntraceFailed("Aspen:SignUp", m);
+            /*System.ntraceFailed("Aspen:SignUp", m);*/
         }
         return new HttpResponse(tpl.render(ctx));
     }
@@ -677,7 +665,7 @@ HttpResponse signup(HttpRequest req, String[] args)
         Map m = new Map();
         m["newid"] = user.name;
         m["email"] = email;
-        System.ntraceNotice("Aspen:SignUp", m);
+        /*System.ntraceNotice("Aspen:SignUp", m);*/
     }
     return redirect("/aspen/");
 }
@@ -690,8 +678,7 @@ HttpResponse check(HttpRequest req, String[] args)
     HttpResponse res = new HttpResponse();
     res["Content-Type"] = "application/json; charset=utf-8";
     Json j = new Json();
-    switch (args[1]) {
-    case "username":
+    if(args[1] == "username"){
         Regex r = new Regex("^[a-zA-Z0-9_]{1,48}$");
         String username = req.params_get["username"];
         if (User.hasUser(username) ||
@@ -707,8 +694,8 @@ HttpResponse check(HttpRequest req, String[] args)
         else {
             j["error"] = false;
         }
-        break;
-    case "email":
+    }
+    else if(args[1] == "email"){
         Regex r = new Regex("^([\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4})?$");
         String email = req.params_get["email"];
         if (email.search(r) < 0) {
@@ -717,8 +704,8 @@ HttpResponse check(HttpRequest req, String[] args)
         else {
             j["error"] = false;
         }
-        break;
-    default:
+    }
+    else{
         return null;
         break;
     }
@@ -750,7 +737,7 @@ HttpResponse save(HttpRequest req, String[] args)
             m["id"] = req.session["id"];
             m["target"] = user;
             m["saving"] = id;
-            System.ntraceFailed("Aspen:Save", m);
+            /*System.ntraceFailed("Aspen:Save", m);*/
         }
         return res;
     }
@@ -794,7 +781,7 @@ HttpResponse save(HttpRequest req, String[] args)
         Map m = new Map();
         m["id"] = req.session["id"];
         m["saving"] = id;
-        System.ntraceNotice("Aspen:Save", m);
+        /*System.ntraceNotice("Aspen:Save", m);*/
     }
     return res;
 }
@@ -802,36 +789,7 @@ HttpResponse save(HttpRequest req, String[] args)
 HttpResponse create(HttpRequest req, String[] args)
 {
     String js_tpl = "// your code goes here.";
-    String html_tpl = """
-<!DOCTYPE html>
-<html>
-<head>
-<title>sample</title>
-<!-- konoha2js code goes here -->
-<script src="%src%"></script>
-<!-- include this if you use js.jquery package -->
-<script src="%static%/js/libs/jquery-1.7.1.min.js"></script>
-<script>
-function runmain() {
-  try {
-    konoha_main();
-  } catch (e) {
-    if (typeof(e) == "string") {
-      konoha.ERR = e;
-    }
-    else {
-      throw e;
-    }
-  }
-  konoha.printERR();
-  konoha.printOUT();
-}
-</script>
-</head>
-<body onload="runmain();">
-</body>
-</html>
-""";
+    String html_tpl = "<!DOCTYPE html>\n<html>\n<head>\n<title>sample</title>\n<!-- konoha2js code goes here -->\n<script src=\"%src%\"></script>\n<!-- include this if you use js.jquery package -->\n<script src=\"%static%/js/libs/jquery-1.7.1.min.js\"></script>\n<script>\nfunction runmain() {\ntry {\nkonoha_main();\n} catch (e) {\nif (typeof(e) == \"string\") {\nkonoha.ERR = e;\n}\nelse {\nthrow e;\n}\n}\nkonoha.printERR();\nkonoha.printOUT();\n}\n</script>\n</head>\n<body onload=\"runmain();\">\n</body>\n</html>";
     if (req.session["id"] == null) {
         return null;
     }
@@ -861,24 +819,24 @@ function runmain() {
             Map m = new Map();
             m["id"] = req.session["id"];
             m["creating"] = codename;
-            System.ntraceFailed("Aspen:Create", m);
+            /*System.ntraceFailed("Aspen:Create", m);*/
         }
         return new HttpResponse(tpl.render(ctx));
     }
     HttpResponse res = new HttpResponse();
     Date d = new Date();
-    String id = (to String)d.year;
-    id += d.getMonth().toString();
-    id += d.getDay().toString();
-    id += d.getHours.toString();
-    id += d.getSeconds().toString();
+    String id = d.getYear().toString();
+    id = id + d.getMonth().toString();
+    id = id + d.getDay().toString();
+    id = id + d.getHours().toString();
+    id = id + d.getSeconds().toString();
     String sessionid = req.session["id"];
     if (!FileStorage.mkdir(sessionid + "/" + id, 0755)) {
         if (TRACE_USER) {
             Map m = new Map();
             m["id"] = req.session["id"];
             m["creating"] = codename;
-            System.ntraceFailed("Aspen:Create", m);
+            /*System.ntraceFailed("Aspen:Create", m);*/
         }
         return redirect("/aspen/");
     }
@@ -887,7 +845,7 @@ function runmain() {
     OutputStream ous_js = FileStorage.newJS(sessionid, id);
     OutputStream ous_ks = FileStorage.newKS(sessionid, id);
     OutputStream ous_html = FileStorage.newHTML(sessionid, id);
-    String git_path = (to String)ous_readme.path;
+    String git_path = ous_readme.path.toString();
     git_path = git_path.substring(0, git_path.lastIndexOf("/"));
     Git g = new Git(git_path);
     html_tpl = html_tpl.replace("%src%", "/aspen/" + sessionid + "/" + id + "/js");
@@ -918,7 +876,7 @@ function runmain() {
         Map m = new Map();
         m["id"] = req.session["id"];
         m["creating"] = codename;
-        System.ntraceNotice("Aspen:Create", m);
+        /*System.ntraceNotice("Aspen:Create", m);*/
     }
     return redirect("/aspen/" + sessionid + "/" + id);
 }
@@ -949,7 +907,7 @@ HttpResponse delete(HttpRequest req, String[] args)
         Map m = new Map();
         m["id"] = req.session["id"];
         m["deleting"] = id;
-        System.ntraceFailed("Aspen:Delete", m);
+        /*System.ntraceFailed("Aspen:Delete", m);*/
     }
     return res;
 }
@@ -969,14 +927,14 @@ HttpResponse search(HttpRequest req, String[] args)
         String[] names = User.getList();
         Model scripts = defineScripts();
         foreach (String name in names) {
-            name = name.convert(to:durl);
+            /*name = name.convert(to:durl);*/
             if (name.indexOf(searchtext) >= 0) {
                 matched_names.add(name);
             }
         }
         Map[] records = scripts.get("user, id, name");
         foreach (Map record in records) {
-            record["name"] = ((to String)record["name"]).convert(to:durl);
+            record["name"] = (record["name"].toString())/*.convert(to:durl)*/;
             String content = "";
             if (record["name"].indexOf(searchtext) >= 0) {
                 record.remove("js");
@@ -1015,9 +973,9 @@ HttpResponse search(HttpRequest req, String[] args)
         Map m = new Map();
         m["id"] = req.session["id"];
         m["searching"] = searchtext;
-        m["UserNum"] = |matched_names|;
-        m["CodeNum"] = |matched_scripts|;
-        System.ntraceFailed("Aspen:Search", m);
+        m["UserNum"] = matched_names.getSize();
+        m["CodeNum"] = matched_scripts.getSize();
+        /*System.ntraceFailed("Aspen:Search", m);*/
     }
     return new HttpResponse(tpl.render(ctx));
 }
@@ -1035,10 +993,10 @@ HttpResponse inquire(HttpRequest req, String[] args)
     }
     Model inquiries = defineInquiries();
     inquiries.set({
-        "title": req.params_post["title"].convert(to:url),
+        "title": req.params_post["title"]/*.convert(to:url)*/,
         "name": req.session["id"],
-        "contents": req.params_post["contents"].convert(to:url),
-        "date": (to String)new Date()
+        "contents": req.params_post["contents"]/*.convert(to:url)*/,
+        "date": new Date().toString();
     });
     return redirect("/aspen/contact/" + inquiries.id);
 }
@@ -1050,15 +1008,15 @@ HttpResponse contact(HttpRequest req, String[] args)
     }
     Template tpl = getDefaultTemplate(req);
     Model inquiries = defineInquiries();
-    if ((to int)args[1] != 0) {
+    if (args[1].toInt() != 0) {
         Map[] m = inquiries.get("*", {
-            "id": (to int)args[1]
+            "id": args[1].toInt()
         });
         if (m.getSize() == 1) {
             Map topic = {};
-            topic["Title"] = ((to String)m[0]["title"]).convert(to:durl);
+            topic["Title"] = (m[0]["title"].toString())/*.convert(to:durl)*/;
             topic["Name"] = m[0]["name"];
-            topic["Contents"] = ((to String)m[0]["contents"]).convert(to:durl);
+            topic["Contents"] = (m[0]["contents"].toSting())/*.convert(to:durl)*/;
             topic["Date"] = m[0]["date"];
             tpl["Topic"] = topic;
             TemplateContext ctx = new TemplateContext();
@@ -1072,11 +1030,11 @@ HttpResponse contact(HttpRequest req, String[] args)
     Array threadlist = [];
     foreach (Map m in inquiries.get("id, title, name, date")) {
         int id = m["id"];
-        String title = ((to String)m["title"]).convert(to:durl);
+        String title = (m["title"].toString())/*.convert(to:durl)*/;
         String name = m["name"];
         String date = m["date"];
         threadlist.add({
-            "Id": (to String)id,
+            "Id": id.toString(),
             "Title": title,
             "Name": name,
             "Date": date
@@ -1117,7 +1075,7 @@ HttpResponse update(HttpRequest req, String[] args)
         m["script"] = script_id;
         m["oldname"] = original_value;
         m["newname"] = update_value;
-        System.ntraceNotice("Aspen:Update", m);
+        /*System.ntraceNotice("Aspen:Update", m);*/
     }
     j["value"] = update_value;
     return new HttpResponse(j.stringify());
@@ -1148,7 +1106,7 @@ HttpResponse help(HttpRequest req, String[] args)
 
 HttpResponse admintop(HttpRequest req, String[] args)
 {
-    if (req.session["id"] == null or not isAdminUser(req.session["id"])) {
+    if (req.session["id"] == null || (!isAdminUser(req.session["id"]))) {
         return redirect("/aspen/");
     }
     Template tpl = getDefaultTemplate(req);
@@ -1159,7 +1117,7 @@ HttpResponse admintop(HttpRequest req, String[] args)
 
 HttpResponse copylist(HttpRequest req, String[] args)
 {
-    if (req.session["id"] == null or not isAdminUser(req.session["id"])) {
+	if (req.session["id"] == null || (!isAdminUser(req.session["id"]))) {
         return redirect("/aspen/");
     }
     Array codelist = [];
@@ -1170,7 +1128,7 @@ HttpResponse copylist(HttpRequest req, String[] args)
         codelist.add({
             "User": m["user"],
             "Id": id,
-            "Name": name.convert(to:durl),
+            "Name": name/*.convert(to:durl)*/,
             "Date": m["date"]
         });
     }
@@ -1183,72 +1141,7 @@ HttpResponse copylist(HttpRequest req, String[] args)
 
 HttpResponse console(HttpRequest req, String[] args)
 {
-    TemplateContext ctx = new TemplateContext("""
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>JQuery Console Demo</title>
-    <script src="<?cs var:STATIC_URL ?>/js/libs/jquery-1.7.1.min.js"></script>
-    <script src="<?cs var:STATIC_URL ?>/js/libs/jquery.console.js"></script>
-    <script type="text/javascript">
-      var console1;
-      $(document).ready(function(){
-         /* First console */
-         console1 = $('.console1');
-         var controller1 = console1.console({
-           //promptLabel: 'Demo> ',
-           commandValidate:function(line){
-             if (line == "") return false;
-             else return true;
-           },
-           commandHandle:function(line){
-               return [{msg:"=> [12,42]",
-                        className:"jquery-console-message-value"},
-                       {msg:":: [a]",
-                        className:"jquery-console-message-type"}]
-           },
-           autofocus:true,
-           animateScroll:true,
-           promptHistory:true,
-           charInsertTrigger:function(keycode,line){
-              // Let you type until you press a-z
-              // Never allow zero.
-              console.log(keycode);
-              console.log(line);
-              //return !line.match(/[a-z]+/) && keycode != '0'.charCodeAt(0);
-              return true;
-           }
-         });
-       });
-    </script>
-    <style type="text/css" media="screen">
-      div.console1 { word-wrap: break-word; }
-      /* First console */
-      div.console1 { font-size: 14px }
-      div.console1 div.jquery-console-inner
-       { width:900px; height:200px; background:#333; padding:0.5em;
-         overflow:auto }
-      div.console1 div.jquery-console-prompt-box
-       { color:#fff; font-family:monospace; }
-      div.console1 div.jquery-console-focus span.jquery-console-cursor
-       { background:#fefefe; color:#333; font-weight:bold }
-      div.console1 div.jquery-console-message-error
-       { color:#ef0505; font-family:sans-serif; font-weight:bold;
-         padding:0.1em; }
-      div.console1 div.jquery-console-message-value
-       { color:#1ad027; font-family:monospace;
-         padding:0.1em; }
-      div.console1 div.jquery-console-message-type
-       { color:#52666f; font-family:monospace;
-         padding:0.1em; }
-      div.console1 span.jquery-console-prompt-label { font-weight:bold }
-    </style>
-  </head>
-  <body>
-    <div class="console1"></div>
-  </body>
-</html>
-""");
+    TemplateContext ctx = new TemplateContext("<!DOCTYPE html>\n<html>\n<head>\n<title>JQuery Console Demo</title>\n<script src=\"<?cs var:STATIC_URL ?>/js/libs/jquery-1.7.1.min.js\"></script>\n<script src=\"<?cs var:STATIC_URL ?>/js/libs/jquery.console.js\"></script>\n<script type=\"text/javascript\">\nvar console1;\n$(document).ready(function(){\n/* First console */\nconsole1 = $('.console1');\nvar controller1 = console1.console({\n//promptLabel: 'Demo> ',\ncommandValidate:function(line){\nif (line == "") return false;\nelse return true;\n},\ncommandHandle:function(line){\nreturn [{msg:\"=> [12,42]\",\nclassName:\"jquery-console-message-value\"},\n{msg:\":: [a]\",\nclassName:\"jquery-console-message-type\"}]\n},\nautofocus:true,\nanimateScroll:true,\npromptHistory:true,\ncharInsertTrigger:function(keycode,line){\n// Let you type until you press a-z\n// Never allow zero.\nconsole.log(keycode);\nconsole.log(line);\n//return !line.match(/[a-z]+/) && keycode != '0'.charCodeAt(0);\nreturn true;\n}\n});\n});\n</script>\n<style type=\"text/css\" media=\"screen\">\ndiv.console1 { word-wrap: break-word; }\n/* First console */\ndiv.console1 { font-size: 14px }\ndiv.console1 div.jquery-console-inner\n{ width:900px; height:200px; background:#333; padding:0.5em;\noverflow:auto }\ndiv.console1 div.jquery-console-prompt-box\n{ color:#fff; font-family:monospace; }\ndiv.console1 div.jquery-console-focus span.jquery-console-cursor\n{ background:#fefefe; color:#333; font-weight:bold }\ndiv.console1 div.jquery-console-message-error\n{ color:#ef0505; font-family:sans-serif; font-weight:bold;\npadding:0.1em; }\ndiv.console1 div.jquery-console-message-value\n{ color:#1ad027; font-family:monospace;\npadding:0.1em; }\ndiv.console1 div.jquery-console-message-type\n{ color:#52666f; font-family:monospace;\npadding:0.1em; }\ndiv.console1 span.jquery-console-prompt-label { font-weight:bold }\n</style>\n</head>\n<body>\n<div class=\"console1\"></div>\n</body>\n</html>\n");
     Template tpl = getDefaultTemplate(req);
     return new HttpResponse(tpl.render(ctx));
 }
@@ -1273,3 +1166,13 @@ Url.patterns = [
     //(new Regex("^aspen/action/setting$"), preference),
     (new Regex("^aspen/.+$"), usertop)
 ];
+
+String InputStream.read() {
+	String ret = "";
+	String s = this.readLine();
+	while(s != null) {
+		ret = ret + s + "\n";
+		s = this.readLine();
+	}
+	return ret;
+}
