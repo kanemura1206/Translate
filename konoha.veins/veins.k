@@ -1,5 +1,3 @@
-import java.util.Map;
-
 /****************************************************************************
  * KONOHA COPYRIGHT, LICENSE NOTICE, AND DISCRIMER
  *
@@ -27,18 +25,16 @@ import java.util.Map;
  ****************************************************************************/
 
 import("konoha");
-import("konoha.new");
-import("konoha.exception");
+//import("konoha.exception");
 import("konoha.regexp");
-import("konoha.sql");
-import("jansson");
+//import("konoha.sql");
+//import("dscript.logger");
+//import("jansson");
 import("posix.fd");
 import("posix.file");
 import("posix.process");
 import("posix.socket");
 import("posix.thread");
-import("dscript.logger");
-import("libuuid");
 const Path = String;
 
 /* ======================================================================== */
@@ -51,10 +47,10 @@ const Path = String;
 
 @Public String String.escapeSql()
 {
-    if (this.indexOf(";") >= 0) {
-        System.throw(new Exception("Invalid sql."));
+    if(this.indexOf(";") >= 0) {
+//        System.throw(new Exception("Invalid sql."));
     }
-    return this.replace($/'/, "''").replace($/\\/, "\\\\");
+    return this.replace(/'/, "''").replace(/\\/, "\\\\");
 }
 
 /* ======================================================================== */
@@ -63,7 +59,7 @@ const Path = String;
 boolean isDebug()
 {
     String debug = DEBUG;
-    if (debug == "true" || debug == "on") {
+    if(debug == "true" || debug == "on") {
         return true;
     }
     return false;
@@ -71,50 +67,50 @@ boolean isDebug()
 
 String getDatabase(String dbname)
 {
-    if (dbname == null) {
+    if(dbname == null) {
         dbname = "default";
     }
     Map dbs = DATABASES;
-    if (dbs == null) {
-        System.throw(new Exception("DATABASES is null"));
+    if(dbs == null) {
+//        System.throw(new Exception("DATABASES is null"));
     }
-    if (dbs[dbname] == null) {
-        if (isDebug()) {
+    if(dbs[dbname] == null) {
+        if(isDebug()) {
             System.p("DATABASES['" + dbname + "'] is null");
         }
         dbname = "default";
-        if (dbs[dbname] == null) {
-             System.throw(new Exception("DATABASES['default'] is null"));
+        if(dbs[dbname] == null) {
+//             System.throw(new Exception("DATABASES['default'] is null"));
         }
     }
-    if (dbs[dbname]["name"] == null) {
-        System.throw(new Exception("DATABASES['" + dbname + "']['name'] is null"));
+    if(dbs[dbname]["name"] == null) {
+//        System.throw(new Exception("DATABASES['" + dbname + "']['name'] is null"));
     }
     String engine = dbs[dbname]["engine"];
-    if (engine == "mysql") {
+    if(engine == "mysql") {
         String urn = "mysql://" + dbs[dbname]["user"] + ":" + dbs[dbname]["password"];
         urn = url + "@" + dbs[dbname]["host"] + ":" + dbs[dbname]["port"] + "/";
         urn = url + dbs[dbname]["name"];
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("urn: " + urn);
         }
         return urn;
     }
-    else if (engine == "sqlite3") {
+    else if(engine == "sqlite3") {
         String urn = "sqlite3:" + dbs[dbname]["name"];
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("urn: " + urn);
         }
         return urn;
     }
-    System.throw(new Exception("DATABASES['" + engine + "']['engine'] is invalid."));
+//    System.throw(new Exception("DATABASES['" + engine + "']['engine'] is invalid."));
 }
 
 String getMediaDir()
 {
     String mediadir = MEDIA_DIR;
-    if (mediadir == null) {
-        System.throw(new Exception("MEDIA_DIR is null"));
+    if(mediadir == null) {
+//        System.throw(new Exception("MEDIA_DIR is null"));
     }
     return mediadir;
 }
@@ -122,8 +118,8 @@ String getMediaDir()
 String getModelDir()
 {
     String modeldir = MODEL_DIR;
-    if (modeldir == null) {
-        System.throw(new Exception("MODEL_DIR is null"));
+    if(modeldir == null) {
+//        System.throw(new Exception("MODEL_DIR is null"));
     }
     return modeldir;
 }
@@ -131,8 +127,8 @@ String getModelDir()
 String getViewDir()
 {
     String viewdir = VIEW_DIR;
-    if (viewdir == null) {
-        System.throw(new Exception("VIEW_DIR is null"));
+    if(viewdir == null) {
+//        System.throw(new Exception("VIEW_DIR is null"));
     }
     return viewdir;
 }
@@ -140,8 +136,8 @@ String getViewDir()
 String getTmpDir()
 {
     String tmpdir = TMP_DIR;
-    if (tmpdir == null) {
-        if (isDebug()) {
+    if(tmpdir == null) {
+        if(isDebug()) {
             System.p("TMP_DIR is null");
         }
         tmpdir = "/tmp/";
@@ -152,8 +148,8 @@ String getTmpDir()
 String getBaseUrl()
 {
     String baseurl = BASE_URL;
-    if (baseurl == null) {
-        System.throw(new Exception("BASE_URL is null"));
+    if(baseurl == null) {
+//        System.throw(new Exception("BASE_URL is null"));
     }
     return baseurl;
 }
@@ -161,8 +157,8 @@ String getBaseUrl()
 String getStaticUrl()
 {
     String staticurl = STATIC_URL;
-    if (staticurl == null) {
-        System.throw(new Exception("STATIC_URL is null"));
+    if(staticurl == null) {
+//        System.throw(new Exception("STATIC_URL is null"));
     }
     return staticurl;
 }
@@ -170,8 +166,8 @@ String getStaticUrl()
 String[] getMiddlewares()
 {
     String[] middlewares = MIDDLEWARES;
-    if (middlewares == null) {
-        if (isDebug()) {
+    if(middlewares == null) {
+        if(isDebug()) {
             System.p("MIDDLEWARES is null");
         }
         middlewares = [];
@@ -179,20 +175,18 @@ String[] getMiddlewares()
     return middlewares;
 }
 
-String int.escapeSqlValue()
+String String.escapeSqlValue()
 {
-        return sql.toString().escapeSql();
+	return "'" + this.escapeSql() + "'";
 }
 
-String Sting.escapeSqlValue()
+String int.escapeSqlValue()
 {
-	return "'" + sql.escapeSql() + "'";
+        return this.toString().escapeSql();
 }
 
 /* ======================================================================== */
 /* Classes. */
-
-class AutoIncrementInt;
 
 class Model
 {
@@ -216,32 +210,32 @@ class Model
             String column = key.escapeSql();
             String type = "";
             String c = scheme.get(key);
-            if (c == "String") {
+            if(c == "String") {
                 type = "text";
                 types[column] = "text";
             }
-            else if (c == "int") {
+            else if(c == "int") {
                 type = "integer";
                 types[column] = "integer";
             }
-            else if (c == "AutoIncrementInt") {
+            else if(c == "AutoIncrementInt") {
                 type = "integer auto_increment";
                 types[column] = "integer";
             }
             else {
-                System.throw(new Exception("scheme['" + key + "']: Unsupported type is given."));
+//                System.throw(new Exception("scheme['" + key + "']: Unsupported type is given."));
             }
-            if (i < keys.getSize() - 1) {
+            if(i < keys.getSize() - 1) {
                 query = query + column + " " + type + ", ";
             }
             else {
                 query = query + column + " " + type;
-                if (primary_keys.getSize() > 0) {
+                if(primary_keys.getSize() > 0) {
                     query = query + ", primary key(";
                     for (int j = 0; j < primary_keys.getSize(); j++) {
                         String primary_key = primary_keys[j].escapeSql();
-                        if (j < primary_keys.getSize() - 1) {
-                            if (isMysql() && types[primary_key] == "text") {
+                        if(j < primary_keys.getSize() - 1) {
+                            if(isMysql() && types[primary_key] == "text") {
                                 query = query + primary_key + "(128), ";
                             }
                             else {
@@ -249,7 +243,7 @@ class Model
                             }
                         }
                         else {
-                            if (isMysql() && types[primary_key] == "text") {
+                            if(isMysql() && types[primary_key] == "text") {
                                 query = query + primary_key + "(128))";
                             }
                             else {
@@ -261,7 +255,7 @@ class Model
                 query = query + ")";
             }
         }
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("model query: " + query);
         }
         Connection con = new Connection(db_path);
@@ -272,13 +266,13 @@ class Model
     Map[] get(String column, Map param) {
         column = column.escapeSql();
         String query = "select " + column + " from " + name;
-        if (param != null && param.getSize() > 0) {
+        if(param != null && param.getSize() > 0) {
             query = query + " where ";
             String[] keys = param.keys();
             for (int i = 0; i < keys.getSize(); i++) {
                 String key = keys[i];
                 String value = escapeSqlValue(param[key]);
-                if (i < keys.getSize() - 1) {
+                if(i < keys.getSize() - 1) {
                     query = query + key + " = " + value + " and ";
                 }
                 else {
@@ -286,7 +280,7 @@ class Model
                 }
             }
         }
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("get query: " + query);
         }
         Connection con = new Connection(db_path);
@@ -296,11 +290,11 @@ class Model
             Map record = new Map();
             for (int i = 0; i < |r|; i++) {
                 String name = r.getName(i);
-                if (r[name] != null) {
+                if(r[name] != null) {
                     record[name] = r[name];
                 }
             }
-            if (isDebug()) {
+            if(isDebug()) {
                 System.p("record: " + record);
             }
             results.add(record);
@@ -311,7 +305,7 @@ class Model
 
     void set(Map record) {
         String query;
-        if (isMysql()) {
+        if(isMysql()) {
             query = "insert into " + name + "(";
         }
         else {
@@ -322,7 +316,7 @@ class Model
         for (int i = 0; i < keys.getSize(); i++) {
             String key = keys[i];
             values.add(escapeSqlValue(record[key]));
-            if (i < keys.getSize() - 1) {
+            if(i < keys.getSize() - 1) {
                 query = query + key.escapeSql() + ", ";
             }
             else {
@@ -330,17 +324,17 @@ class Model
             }
         }
         for (int i = 0; i < values.getSize(); i++) {
-            if (i < values.getSize() - 1) {
+            if(i < values.getSize() - 1) {
                 query = query + values[i] + ", ";
             }
             else {
                 query = query + values[i] + ")";
             }
         }
-        if (isMysql()) {
+        if(isMysql()) {
             query = query + " on duplicate key update ";
             for (int i = 0; i < keys.getSize(); i++) {
-                if (i < keys.getSize() - 1) {
+                if(i < keys.getSize() - 1) {
                     query = query + keys[i] + " = " + values[i] + ", ";
                 }
                 else {
@@ -348,7 +342,7 @@ class Model
                 }
             }
         }
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("set query: " + query);
         }
         Connection con = new Connection(db_path);
@@ -364,7 +358,7 @@ class Model
         for (int i = 0; i < keys.getSize(); i++) {
             String key = keys[i];
             values.add(escapeSqlValue(record.get(key));
-            if (i < keys.getSize() - 1) {
+            if(i < keys.getSize() - 1) {
                 query = query + key.escapeSql() + ", ";
             }
             else {
@@ -372,14 +366,14 @@ class Model
             }
         }
         for (int i = 0; i < values.getSize(); i++) {
-            if (i < values.getSize() - 1) {
+            if(i < values.getSize() - 1) {
                 query = query + values[i] + ", ";
             }
             else {
                 query = query + values[i] + ")";
             }
         }
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("add query: " + query);
         }
         Connection con = new Connection(db_path);
@@ -393,14 +387,14 @@ class Model
         String[] keys = record.keys();
         for (int i = 0; i < keys.getSize(); i++) {
             String key = keys[i];
-            if (i < keys.getSize() - 1) {
+            if(i < keys.getSize() - 1) {
                 query = query + key.escapeSql() + " = " + escapeSqlValue(record.get(key)) + " and ";
             }
             else {
                 query = query + key.escapeSql() + " = " + escapeSqlValue(record.get(key));
             }
         }
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("remove query: " + query);
         }
         Connection con = new Connection(db_path);
@@ -414,19 +408,19 @@ class Model
         int i;
         for (i = 0; i < keys.getSize(); i++) {
             String key = keys[i];
-            if (i < keys.getSize() - 1) {
+            if(i < keys.getSize() - 1) {
                 query = query + key.escapeSql() + " = " + escapeSqlValue(record.get(key)) + ", ";
             }
             else {
                 query = query + key.escapeSql() + " = " + escapeSqlValue(record.get(key));
             }
         }
-        if (param != null && param.getSize() > 0) {
+        if(param != null && param.getSize() > 0) {
             query = query + " where ";
             keys = param.keys();
             for (i = 0; i < keys.getSize(); i++) {
                 String key = keys[i];
-                if (i < .keys.getSize() - 1) {
+                if(i < .keys.getSize() - 1) {
                     query = query + key.escapeSql() + " = " + escapeSqlValue(param.get(key)) + " and ";
                 }
                 else {
@@ -434,7 +428,7 @@ class Model
                 }
             }
         }
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("update query: " + query);
         }
         Connection con = new Connection(db_path);
@@ -454,44 +448,44 @@ class Model
 
     String checkName(String name) {
         if(name.indexOf("..") != -1) return null;
-        Regex r = new Regex("^[\\w_\\.\\-/]+$");
+        RegExp r = new RegExp("^[\\w_\\.\\-/]+$");
         if(name.search(r) < 0) return null;
         return getMediaDir() + name;
     }
 
-    InputStream open(String name, String mode) {
+    FILE open(String name, String mode) {
         name = checkName(name);
         if(name != null) {
-            return new InputStream(name, mode);
+            return new FILE(name, mode);
         }
         return null;
     }
 
-    OutputStream newFile(String name, String mode) {
+    FILE newFile(String name, String mode) {
         name = checkName(name);
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("newFile: " + name);
         }
         if(name != null) {
-            return new OutputStream(name, mode);
+            return new FILE(name, mode);
         }
         return null;
     }
 
     boolean mkdir(String name, int mode) {
         name = checkName(name);
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("mkdir: " + name);
         }
-        if (name.endsWith("/")) {
+        if(name.endsWith("/")) {
             name = name.substring(0, name.getSize() - 1);
         }
         String[] dirnames = name.split("/");
-        if (!chdir("/")) {
+        if(!chdir("/")) {
             return false;
         }
         for (int i = 0; i < dirnames.getSize() - 1; i++) {
-            if (dirnames[i] != "" && !chdir(dirnames[i])) {
+            if(dirnames[i] != "" && !chdir(dirnames[i])) {
                 return false;
             }
         }
@@ -520,10 +514,10 @@ class Group
 
     boolean hasPermission(Permission perm) {
         Map[] m = group.get("*", {"name": name});
-        if (|m| == 1) {
+        if(m.getSize() == 1) {
             String perms = (m[0]["permissions"] == null) ? "" : m[0]["permissions"];
             foreach (String p in perms.split(",")) {
-                if (p == perm.name) return true;
+                if(p == perm.name) return true;
             }
         }
         return false;
@@ -566,7 +560,7 @@ class User
             "name": name
         });
         int id = -1;
-        if (m.getSize() == 1) {
+        if(m.getSize() == 1) {
             id = m[0]["id"];
         }
         return id;
@@ -584,25 +578,25 @@ class User
             "name": name,
             "password": password.convert(to:SHA256)
         });
-        if (|m| == 1) {
+        if(|m| == 1) {
             int id = m[0]["id"];
             String[] p;
             String[] g;
-            try {
+//            try {
                 String perms = m[0]["permissions"];
                 p = perms.split(",");
-            } catch (Exception e) {
-                p = [];
-            }
-            try {
+//            } catch (Exception e) {
+//                p = [];
+//            }
+//            try {
                 String groups = m[0]["groups"];
                 g = groups.split(",");
-            } catch (Exception e) {
-                g = [];
-            }
+//            } catch (Exception e) {
+//                g = [];
+//            }
             return new User(id, name, p, g);
         }
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("authenticate result: " + m);
         }
         return null;
@@ -619,20 +613,20 @@ class User
         Map[] m = user.get("id", {
             "name": name
         });
-        if (m.getSize() == 1) {
-            if (isDebug()) {
+        if(m.getSize() == 1) {
+            if(isDebug()) {
                 System.p("user '" + name + "' exists");
             }
             return true;
         }
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("user '" + name + "' does not exist");
         }
         return false;
     }
 
     @Static User addUser(String name, String password) {
-        if (User.hasUser(name)) {
+        if(User.hasUser(name)) {
             return null;
         }
         Model user = new Model("users", {
@@ -679,7 +673,7 @@ class TemplateContext
     }
 
     void parseFile(Path path) {
-        if (!path.startsWith("/")) {
+        if(!path.startsWith("/")) {
             path = getViewDir() + path;
         }
         this.file = path;
@@ -694,14 +688,14 @@ class TemplateContext
 
 /*    void loadHdf(Hdf hdf) {
         loadSettingValues(hdf);
-        if (isDebug()) {
+        if(isDebug()) {
             hdf.writeFile("/tmp/hdf");
         }
         this.cs = new Cs(hdf);
-        if (str != null) {
+        if(str != null) {
             cs.parseString(str);
         }
-        if (file != null) {
+        if(file != null) {
             cs.parseFile(file);
         }
     }*/
@@ -714,7 +708,7 @@ class Template
 
     Template(String template) {
 /*        this.hdf = new Hdf();
-        if (template != null) {
+        if(template != null) {
             hdf.readString(template);
         }*/
     }
@@ -750,7 +744,7 @@ class Template
     }
 
     void readFile(Path path) {
-        if (!path.startsWith("/")) {
+        if(!path.startsWith("/")) {
             path = getModelDir() + path;
         }
         /*hdf.readFile(path);*/
@@ -774,20 +768,54 @@ class Template
 
     boolean save(String name) {
         String path = FileStorage.checkName(name);
-        if (path == null) return false;
+        if(path == null) return false;
         /*hdf.writeFileAtomic(path)*/;
         return true;
     }
 
     boolean load(String name) {
         String path = FileStorage.checkName(name);
-        if (path == null) return false;
-        if (System.stat(path) == null) {
+        if(path == null) return false;
+        if(System.stat(path) == null) {
             return false;
         }
         /*hdf.readFile(path);*/
         return true;
     }
+}
+
+class HttpRequest;
+class HttpResponse;
+
+class Tuple {
+	Array[String] base;
+	RegExp reg;
+	Func[HttpRequest,HttpResponse,String[]] fun;
+	HttpResponse htt;
+	
+	Tuple(String a, String b) {
+		this.base = [a, b];
+	}
+	
+	Tuple(RegExp a,Func[HttpRequest,HttpResponse,String[]] b){
+		this.reg = a;
+		this.fun = b;
+	}
+	
+	Tuple(RegExp a, HttpResponse b){
+		this.reg = a;
+		this.htt = b;
+	}
+	
+	String get(int index) {
+		if(index == 0) {
+			return base[0];
+		}
+		else if(index == 1) {
+			return base[1];
+		}
+		return null;
+	}
 }
 
 @Expando class HttpRequest //TODO Expand
@@ -804,22 +832,22 @@ class Template
         Map[String] m = new Map[String]();
         foreach (String param in query.split("&")) {
             String[] k_v = param.split("=");
-            if (k_v.getSize() == 2 && k_v[1] != null) {
+            if(k_v.getSize() == 2 && k_v[1] != null) {
                 m[k_v[0]] = k_v[1]/*.convert(to:durl)*/;
             }
             else {
                 m[k_v[0]] = "";
             }
         }
-        if (method == "GET") {
+        if(method == "GET") {
             this.params_get = m;
         }
-        else if (method == "POST") {
+        else if(method == "POST") {
             this.params_post = m;
         }
         m = new Map[String]();
-        if (cookie != null) {
-            foreach (String ck in cookie.replace($/ /, "").split(";")) {
+        if(cookie != null) {
+            foreach (String ck in cookie.replace(/ /, "").split(";")) {
                 String[] k_v = ck.split("=");
                 m[k_v[0]] = k_v[1];
             }
@@ -832,25 +860,25 @@ class HttpResponse
 {
     String content;
     int status;
-    Tuple[String,String][] h;
+    Tuple[] h;
 
-    HttpResponse(String content, Tuple[String,String][] headers) {
+    HttpResponse(String content, Tuple[] headers) {
         this.content = content;
         this.h = headers;
-        if (h == null) {
+        if(h == null) {
             this.h = [];
         }
     }
 
     void set(String header, String value) {
-        h.add((header, value));
+        h.add(header, value);
     }
 
     String[] get(String header) {
         String[] ret = [];
-        foreach (Tuple[String,String] t in this.h) {
-            if (t[0] == header) {
-                ret.add(t[1]);
+        foreach (Tuple t in this.h) {
+            if(t.get(0) == header) {
+                ret.add(t.get(1));
             }
         }
         return ret;
@@ -858,9 +886,9 @@ class HttpResponse
 
     String[] keys(void) {
         String[] keys = [];
-        foreach (Tuple[String,String] t in this.h) {
-            if (!((t[0] in? keys))) {
-                keys.add(t[0]);
+        foreach (Tuple t in this.h) {
+            if(keys.indexOf(t.get(0)) == -1) {
+            	keys.add(t.get(0));
             }
         }
         return keys;
@@ -869,12 +897,12 @@ class HttpResponse
     void setCookie(String key, String value, String expires, String path) {
         path = (path == null) ? "/" : path;
         String cookie = key + "=" + value + "; ";
-        if (expires != null && expires != "") {
+        if(expires != null && expires != "") {
             cookie = cookie + "expires=" + expires + "; ";
         }
         cookie = cookie + "path=" + path + ";";
         this["Set-Cookie"] = cookie;
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("Set-Cookie: " + cookie);
         }
     }
@@ -886,7 +914,7 @@ class HttpResponse
         past.setYear(1970);
         cookie = cookie + "expires=" + past.toUTCString();
         this["Set-Cookie"] = cookie;
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("Delete-Cookie: " + cookie);
         }
     }
@@ -900,20 +928,7 @@ class HttpResponseRedirect extends HttpResponse
     }
 }
 
-@Singleton class Url
-{
-    Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]][] getPatterns() {
-    	Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]][] patterns = VEINS.urlpatterns;
-        if (patterns == null) {
-        	VEINS.urlpatterns = new Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]][0];
-        }
-        return VEINS.urlpatterns;
-    }
-
-    void setPatterns(Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]][] patterns) {
-    	VEINS.urlpatterns = patterns;
-    }
-}
+//Tuple[] urlpatterns;
 
 @Singleton class Middleware
 {
@@ -921,7 +936,17 @@ class HttpResponseRedirect extends HttpResponse
     @Virtual HttpResponse hookHandler(HttpRequest req,
             Func[HttpRequest,HttpResponse,String[]] callback, String[] args);
     @Virtual HttpResponse hookResponse(HttpRequest req, HttpResponse res);
-    @Virtual HttpResponse hookException(HttpRequest req, Exception e);
+//    @Virtual HttpResponse hookException(HttpRequest req, Exception e);
+}
+
+String FILE.read() {
+	String ret = "";
+	String s = this.readLine();
+	while(s != null) {
+		ret = ret + s + "\n";
+		s = this.readLine();
+	}
+	return ret;
 }
 
 class Session
@@ -929,38 +954,38 @@ class Session
     Path path;
     String fname;
     String origname;
-    Json j;
+//    Json j;
 
     Session(String name) {
-        if (name != null && name != "") {
+        if(name != null && name != "") {
             this.origname = name;
             this.fname = name/*.convert(to:SHA256)*/;
         }
         else {
-            this.origname = Uuid.getUuid4(); //TODO Uuid
+            this.origname = (Math.random() * 1000000).toString(); //TODO Generate random id
             this.fname = origname/*.convert(to:SHA256)*/;
         }
         this.path = getTmpDir() + fname;
-        if (load()) {
-            if (isDebug()) {
+        if(load()) {
+            if(isDebug()) {
                 System.p("load succeeded");
             }
         }
         else {
-            if (isDebug()) {
+            if(isDebug()) {
                 System.p("load failed");
             }
         }
     }
 
     Session renew(String name) {
-        if (System.unlink(path)) {
-            if (isDebug()) {
+        if(System.unlink(path)) {
+            if(isDebug()) {
                 System.p("unlink: " + path);
             }
         }
         else {
-            if (isDebug()) {
+            if(isDebug()) {
                 System.p("unlink failed: " + path);
             }
         }
@@ -968,22 +993,30 @@ class Session
     }
 
     boolean load() {
-        if (System.stat(path)== null) {
-            this.j = new Json();
+        if(System.stat(path)== null) {
+//            this.j = new Json();
             return false;
         }
         else {
-            InputStream ins = new InputStream(path);
-            this.j = Json.parse(ins.read()/*.decode(to:xor)*/);
+            FILE ins = new FILE(path);
+//            this.j = Json.parse(ins.read()/*.decode(to:xor)*/);
             ins.close();
             return true;
         }
     }
 
-    dynamic get(String key) {
+    int getInt(String key) {
         return j[key];
     }
 
+    float getFloat(String key) {
+        return j[key];
+    }
+    
+    String getString(String key) {
+        return j[key];
+    }
+    
     String[] keys() {
         return j.getKeys();
     }
@@ -1009,7 +1042,7 @@ class Session
     }
 
     void store() {
-        OutputStream ous = new OutputStream(path);
+        FILE ous = new FILE(path);
         ous.write(j.stringify()/*.encode(to:xor)*/);
         ous.close();
     }
@@ -1022,11 +1055,11 @@ class Session
 @Singleton class SessionMiddleware extends Middleware
 {
     HttpResponse hookRequest(HttpRequest req) {
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("hook request: " + req);
         }
-        if (req.cookies["KSESSIONID"] != null) {
-            if (isDebug()) {
+        if(req.cookies["KSESSIONID"] != null) {
+            if(isDebug()) {
                 System.p("KSESSIONID: " + req.cookies["KSESSIONID"]);
             }
             req.session = new Session(req.cookies["KSESSIONID"]);
@@ -1039,27 +1072,27 @@ class Session
 
     HttpResponse hookHandler(HttpRequest req,
     		Func[HttpResponse,HttpRequest,String[]] callback, String[] args) {
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("hook handler: " + req + callback + args);
         }
         return null;
     }
 
     HttpResponse hookResponse(HttpRequest req, HttpResponse res) {
-        if (isDebug()) {
+        if(isDebug()) {
             System.p("hook response");
         }
-        if (req.cookies["KSESSIONID"] == null ||
+        if(req.cookies["KSESSIONID"] == null ||
                 req.cookies["KSESSIONID"] != req.session.origname) {
-            if (isDebug()) {
+            if(isDebug()) {
                 System.p("old session: " + req.cookies["KSESSIONID"]);
                 System.p("new session: " + req.session.fname/*.convert(to:SHA256)*/);
             }
             //Date now = new Date();
-            //if (now.day < 15) {
+            //if(now.day < 15) {
             //    now.day += 14;
             //}
-            //else if (now.month < 12) {
+            //else if(now.month < 12) {
             //    now.day -= 14;
             //    now.month += 1;
             //}
@@ -1076,12 +1109,12 @@ class Session
         return res;
     }
 
-    HttpResponse hookException(HttpRequest req, Exception e) {
-        if (isDebug()) {
-            System.p("hook exception: " + req + e);
-        }
-        return null;
-    }
+//    HttpResponse hookException(HttpRequest req, Exception e) {
+//        if(isDebug()) {
+//            System.p("hook exception: " + req + e);
+//        }
+//        return null;
+//    }
 }
 
 @Singleton class LoggingMiddleware extends Middleware
@@ -1090,19 +1123,19 @@ class Session
         Map m = new Map();
         m["path"] = req.path;
         m["method"] = req.method;
-        try {
-            if (req.session != null) {
+//        try {
+            if(req.session != null) {
                 m["session"] = req.session.toString();
             }
-        } catch (Exception!! e) {
-            m["session"] = "none";
-        }
+//        } catch (Exception!! e) {
+//            m["session"] = "none";
+//        }
         /*System.ntraceNotice("Veins:Request", m);*/
         return null;
     }
 
     HttpResponse hookHandler(HttpRequest req,
-    		Func[HttpResponse,HttpRequest,String[]]] callback, String[] args) {
+    		Func[HttpResponse,HttpRequest,String[]] callback, String[] args) {
         Map m = new Map();
         m["handler"] = callback.name;
         String argstr = "[";
@@ -1128,12 +1161,12 @@ class Session
         return res;
     }
 
-    HttpResponse hookException(HttpRequest req, Exception e) {
+/*    HttpResponse hookException(HttpRequest req, Exception e) {
         Map m = new Map();
         m["message"] = e.toString();
-        /*System.ntraceFailed("Veins:Exception", m);*/
+        System.ntraceFailed("Veins:Exception", m);
         return null;
-    }
+    }*/
 }
 
 /* ======================================================================== */
@@ -1142,52 +1175,51 @@ HttpRequest g_req;
 HttpResponse g_res;
 Func[HttpResponse,HttpRequest,String[]]] g_handler;
 String[] g_args;
-Exception g_e;
+//Exception g_e;
 
-@Public String Wsgi.application(Map[String] environ,
-        Func[String,Tuple[String,String][]] start_response)
+@Public String Wsgi.application(Map[String] environ, Func[String,Tuple[]] start_response)
 {
     // initialize global variables
     g_req = null;
     g_res = null;
     g_handler = null;
     g_args = null;
-    g_e = null;
+//    g_e = null;
 
     String[] middlewares = getMiddlewares();
     String path = environ["URI"];
-    if (path.getSize() >= 1 && path != "/") {
+    if(path.getSize() >= 1 && path != "/") {
         path = path.substring(1);
     }
-    if (isDebug()) {
+    if(isDebug()) {
         foreach (String e in environ.keys()) {
             System.p("env[" + e + "]=" + environ[e]);
         }
         System.p("path: " + path);
     }
-    try {
+//    try {
         String method = environ["REQUEST_METHOD"];
         String query = environ["QUERY_STRING"];
         String cookie = environ["Cookie"];
         g_req = new HttpRequest(path, method, query, cookie);
         foreach (String middleware in middlewares) {
-            if (isDebug()) {
+            if(isDebug()) {
                 System.p("call " + middleware + ".hookRequest()");
             }
             eval("g_res = " + middleware + ".hookRequest(g_req);");
-            if (g_res != null) {
+            if(g_res != null) {
                 break;
             }
         }
-        if (g_res == null) {
-            foreach (Tuple[Regex,Func[HttpRequest,HttpResponse,String[]]] t in Url.getPatterns()) {
-                if (path.search(t[0]) >= 0) {
+        if(g_res == null) {
+            foreach (Tuple t in urlpatterns) {
+                if(path.search(t.reg) >= 0) {
                     g_args = path.split("/");
-                    if (g_args.getSize() > 0) {
+                    if(g_args.getSize() > 0) {
                         g_args.remove(0);
                     }
-                    g_handler = t[1];
-                    if (isDebug()) {
+                    g_handler = t.fun;
+                    if(isDebug()) {
                         System.p("handler: " + g_handler);
                         System.getOut().print("args: [");
                         foreach (String g_arg in g_args) {
@@ -1196,12 +1228,12 @@ Exception g_e;
                         System.p("]");
                     }
                     foreach (String middleware in middlewares) {
-                        if (isDebug()) {
+                        if(isDebug()) {
                             System.p("call " + middleware + ".hookHandler()");
                         }
                         eval("g_res = " + middleware + ".hookHandler(g_req, g_handler, g_args);");
                     }
-                    if (g_res != null) {
+                    if(g_res != null) {
                         break;
                     }
                     g_res = g_handler(g_req, g_args);
@@ -1209,39 +1241,39 @@ Exception g_e;
                 }
             }
         }
-        if (g_res != null) {
+        if(g_res != null) {
             foreach (String middleware in middlewares) {
-                if (isDebug()) {
+                if(isDebug()) {
                     System.p("call " + middleware + ".hookResponse()");
                 }
                 eval("g_res = " + middleware + ".hookResponse(g_req, g_res);");
             }
         }
-    } catch (Exception e) {
-        g_e = e;
-        foreach (String middleware in middlewares) {
-            if (isDebug()) {
-                System.p("call " + middleware + ".hookException()");
-            }
-            eval("g_res = " + middleware + ".hookException(g_req, g_e);");
-            if (g_res != null) {
-                break;
-            }
-        }
-    }
-    if (g_res != null) {
-        Tuple[String,String][] headers = g_res.h;
-        if (!("Content-Type" in? g_res.keys())) {
-            headers.add(("Content-Type", "text/html; charset=UTF-8"));
+//    } catch (Exception e) {
+//        g_e = e;
+//        foreach (String middleware in middlewares) {
+//            if(isDebug()) {
+//                System.p("call " + middleware + ".hookException()");
+//            }
+//            eval("g_res = " + middleware + ".hookException(g_req, g_e);");
+//            if(g_res != null) {
+//                break;
+//            }
+//        }
+//    }
+    if(g_res != null) {
+        Tuple[] headers = g_res.h;
+        if(g_res.keys().indexOf("Content-Type") == -1){
+        	headers.add(("Content-Type", "text/html; charset=UTF-8"));
         }
         String status = "";
-        if (g_res.status == 301) {
+        if(g_res.status == 301) {
             status = "301 Moved Permanently";
         }
-        else if (g_res.status == 302) {
+        else if(g_res.status == 302) {
             status = "302 Found";
         }
-        else if (g_res.status == 404) {
+        else if(g_res.status == 404) {
             status = "404 Not Found";
         }
         else {
@@ -1250,7 +1282,7 @@ Exception g_e;
         start_response(status, headers);
         return g_res.content;
     }
-    if (!(path.endsWith("/"))) {
+    if(!(path.endsWith("/"))) {
         String redirect_url = environ["URI"] + "/";
         start_response("302 Found", [
             ("Content-Type", "text/html; charset=UTF-8"),
@@ -1260,30 +1292,4 @@ Exception g_e;
     }
     start_response("404 Not Found", [("Content-Type", "text/html; charset=UTF-8")]);
     return "";
-}
-
-class Tuple {
-	Array[String] base;
-	Tuple(String a, String b) {
-		base = [a, b];
-	}
-	String get(int index) {
-		if(index == 0) {
-			return base[0];
-		}
-		else if(index == 1) {
-			return base[1];
-		}
-		return null;
-	}
-}
-
-String InputStream.read() {
-	String ret = "";
-	String s = this.readLine();
-	while(s != null) {
-		ret = ret + s + "\n";
-		s = this.readLine();
-	}
-	return ret;
 }

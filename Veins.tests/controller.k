@@ -3,26 +3,24 @@
  */
 
 /* It must be called before veins package is loaded. */
-import("/Users/chen_ji/Devel/git/Veins/tests/settings.k");
 import("konoha");
-import("konoha.veins");
 import("konoha.new");
-import("konoha.exception");
+//import("konoha.exception");
 import("konoha.regexp");
-import("konoha.sql");
-import("jansson");
+//import("konoha.sql");
 import("posix.fd");
 import("posix.file");
 import("posix.process");
 import("posix.socket");
 import("posix.thread");
-import("dscript.logger");
-import("libuuid");
+import("konoha.defined");
+
+load("/home/yoshiaki/eclipse/workspace/Translate/konoha.veins/veins.k");
+load("/home/yoshiaki/eclipse/workspace/Translate/Veins.test/settings.k");
 
 HttpResponse document(HttpRequest req, String[] args)
 {
-    HttpResponse res = new HttpResponse(
-            "page '" + args[0] + "', column '" + args[1] + "' document");
+    HttpResponse res = new HttpResponse("page '" + args[0] + "', column '" + args[1] + "' document");
     res["Content-Type"] = "text/plain";
     return res;
 }
@@ -114,10 +112,4 @@ HttpResponse request(HttpRequest req, String[] args)
     return res;
 }
 
-Url.patterns = [
-    (new Regex("^test/$"), top),
-    (new Regex("^test/request/$"), request),
-    (new Regex("^test/doc/\\w+/\\w+/$"), document),
-    (new Regex("^test/menu/\\w+/$"), menu),
-    (new Regex("^test/session/$"), session)
-];
+//urlpatterns = [new Tuple(RegExp("^test/$"), top), new Tuple(RegExp("^test/request/$"), request), new Tuple(RegExp("^test/doc/\\w+/\\w+/$"), document), new Tuple(RegExp("^test/menu/\\w+/$"), menu), new Tuple(RegExp("^test/session/$"), session)];

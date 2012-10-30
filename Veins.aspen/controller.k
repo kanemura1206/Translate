@@ -3,55 +3,54 @@
  */
 
 /* It must be called before veins package is loaded. */
-import("/Users/chen_ji/Devel/git/Veins/aspen/settings.k");
 
 import("konoha");
-import("konoha.veins");
-import("konoha.new");
-import("konoha.exception");
+//import("konoha.exception");
 import("konoha.regexp");
-import("konoha.sql");
-import("jansson");
+import("konoha.math");
+//import("konoha.sql");
 import("posix.fd");
 import("posix.file");
 import("posix.process");
 import("posix.socket");
 import("posix.thread");
-import("dscript.logger");
-import("libuuid");
+import("konoha.defined");
 
-if (!(defined TRACE_USER)) {
+load("/home/yoshiaki/eclipse/workspace/Translate/konoha.veins/veins.k");
+load("/home/yoshiaki/eclipse/workspace/Translate/Veins.aspen/settings.k");
+
+if (!(defined(TRACE_USER))) {
     TRACE_USER = true;
 }
 
-if (!(defined Git)) {
-    class Git
-    {
-        String path;
-        String cmd;
-
-        Git(String path) {
-            this.path = path;
-            this.cmd = "/Users/chen_ji/Devel/git/Veins/aspen/subproc-git.sh -d \"" + path + "\"";
-        }
-
-        void init() {
-            exec(cmd + " -c init");
-        }
-
-        void add(String file) {
-            exec(cmd + " -c add -a \"" + file + "\"");
-        }
-
-        void commit(String msg) {
-            exec(cmd + " -c commit -a \"-m '" + msg + "'\"");
-        }
-
-        void commitAll(String msg) {
-            exec(cmd + " -c commit -a \"-a -m '" + msg + "'\"");
-        }
-    }
-}
+//if (!(defined(Git))) {
+//    class Git
+//    {
+//        String path;
+//        String cmd;
+//
+//        Git(String path) {
+//            this.path = path;
+//            this.cmd = "/Users/chen_ji/Devel/git/Veins/aspen/subproc-git.sh -d \"" + path + "\"";
+//        }
+//
+//        void init() {
+//            exec(cmd + " -c init");
+//        }
+//
+//        void add(String file) {
+//            exec(cmd + " -c add -a \"" + file + "\"");
+//        }
+//
+//        void commit(String msg) {
+//            exec(cmd + " -c commit -a \"-m '" + msg + "'\"");
+//        }
+//
+//        void commitAll(String msg) {
+//            exec(cmd + " -c commit -a \"-a -m '" + msg + "'\"");
+//        }
+//    }
+//}
 
 HttpResponse redirect(String location)
 {
@@ -61,8 +60,12 @@ HttpResponse redirect(String location)
     return res;
 }
 
-Model defineScripts()
+const DBPATH="mysql://aspen:konoha@localhost:3306";
+
+Connection defineScripts()
 {
+	String str;
+	str = "hrllo";
     return new Model("scripts", {
         "user": String,
         "id": String,
@@ -114,47 +117,47 @@ Template getDefaultTemplate(HttpRequest req)
     return tpl;
 }
 
-@Public InputStream FileStorage.openReadme(String user, String id)
+@Public FILE FileStorage.openReadme(String user, String id)
 {
     return FileStorage.open(user + "/" + id + "/readme.txt");
 }
 
-@Public InputStream FileStorage.openJS(String user, String id)
+@Public FILE FileStorage.openJS(String user, String id)
 {
     return FileStorage.open(user + "/" + id + "/k2js.k");
 }
 
-@Public InputStream FileStorage.openKS(String user, String id)
+@Public FILE FileStorage.openKS(String user, String id)
 {
     return FileStorage.open(user + "/" + id + "/ks.k");
 }
 
-@Public InputStream FileStorage.openHTML(String user, String id)
+@Public FILE FileStorage.openHTML(String user, String id)
 {
     return FileStorage.open(user + "/" + id + "/index.html");
 }
 
-@Public OutputStream FileStorage.newReadme(String user, String id)
+@Public FILE FileStorage.newReadme(String user, String id)
 {
     return FileStorage.newFile(user + "/" + id + "/readme.txt");
 }
 
-@Public OutputStream FileStorage.newJS(String user, String id)
+@Public FILE FileStorage.newJS(String user, String id)
 {
     return FileStorage.newFile(user + "/" + id + "/k2js.k");
 }
 
-@Public OutputStream FileStorage.newKS(String user, String id)
+@Public FILE FileStorage.newKS(String user, String id)
 {
     return FileStorage.newFile(user + "/" + id + "/ks.k");
 }
 
-@Public OutputStream FileStorage.newHTML(String user, String id)
+@Public FILE FileStorage.newHTML(String user, String id)
 {
     return FileStorage.newFile(user + "/" + id + "/index.html");
 }
 
-@Public OutputStream FileStorage.newHistory(String user, String id)
+@Public FILE FileStorage.newHistory(String user, String id)
 {
     return FileStorage.newFile(user + "/" + id + "/history.txt");
 }
@@ -235,15 +238,17 @@ HttpResponse viewer(HttpRequest req, String[] args)
     Template tpl = getDefaultTemplate(req);
     tpl["User.Name"] = args[0];
     tpl["User.Id"] = args[1];
-    Model scripts = defineScripts();
-    Map[] m = scripts.get("name", {
-        "user": args[0],
-        "id": args[1]
-    });
-    if (m.getSize() == 0) {
-        return null;
+//    Model scripts = defineScripts();
+    Connection con = new Connection(DBPATH);
+//    Map[] m = scripts.get("name", {
+//        "user": args[0],
+//        "id": args[1]
+//    });
+    ResultSet r = con.query("select name from scripts where user=" + args[0] + " and id=" + args[1]);
+    if (r.next() == false) {
+       return null;
     }
-    String name = m[0]["name"];
+    String name = r.getString["name"];
     String readme = FileStorage.openReadme(args[0], args[1]).read();
     String js = FileStorage.openJS(args[0], args[1]).read();
     String ks = FileStorage.openKS(args[0], args[1]).read();
@@ -255,23 +260,29 @@ HttpResponse viewer(HttpRequest req, String[] args)
     tpl["Code.Body.Js"] = js;
     tpl["Code.Body.Ks"] = ks;
     tpl["Code.Body.Html"] = html;
-    Model counter = defineCounter();
+//    Model counter = defineCounter();
     String page = args[0] + "/" + args[1];
-    m = counter.get("count", {
-        "page": page
-    });
+//    m = counter.get("count", {
+//        "page": page
+//    });
+    ResultSet r = con.query("select count from counter where page=" + page);
+    
     int count = 0;
-    if (m.getSize() == 0) {
-        counter.set({
-            "page": page,
-            "count": 0
-        });
+    if (r.next() == false) {
+//        counter.set({
+//            "page": page,
+//            "count": 0
+//        });
+        con.query("insert into counter (page, count) values(" + page + ", " + 0 + ")");
     }
     else {
-        count = m[0]["count"];
-        counter.update({
-            "count": count + 1
-        }, {"page": page});
+//        count = m[0]["count"];
+    	count = r.getInt("count");
+//        counter.update({
+//            "count": count + 1
+//        }, {"page": page});
+    	count = count + 1;
+    	con.query("update counter set count=" + count + " where page=" + page);
     }
     tpl["Code.Viewcount"] = count;
     TemplateContext ctx = new TemplateContext();
@@ -301,14 +312,14 @@ void reportBug(String user, String id) {
     String fname = d.getYear().toString() + d.getMonth().toString() + d.getDay().toString();
     fname = fname + d.getHours().toString() + d.getMinutes().toString() + d.getSeconds().toString();
     fname = fname + "_" + user + "_" + id + ".k";
-    OutputStream ous = FileStorage.newFile("BUGS/" + fname);
-    InputStream ins = FileStorage.openJS(user, id);
+    FILE ous = FileStorage.newFile("BUGS/" + fname);
+    FILE ins = FileStorage.openJS(user, id);
     ous.write(ins.read());
     ous.close();
     ins.close();
 }
 
-String compile(InputStream body, String k2jspath, String scriptpath) {
+String compile(FILE body, String k2jspath, String scriptpath) {
     body.close();
     String[] result = exec(k2jspath + " -c -i " + scriptpath + " 2>&1").split("\n");
     result.pop()
@@ -316,7 +327,7 @@ String compile(InputStream body, String k2jspath, String scriptpath) {
     Json[] errs = [];
     Json[] infos = [];
     Json[] warns = [];
-    Regex r = new Regex(" - \\((\\w+\\.k)\\:(\\d+)\\) \\((\\w+)\\) (.+)");
+    RegExp r = new RegExp(" - \\((\\w+\\.k)\\:(\\d+)\\) \\((\\w+)\\) (.+)");
     foreach (String line in result) {
         String[] reg = line.match(r);
         if (reg.getSize() > 0) {
@@ -364,15 +375,17 @@ HttpResponse konoha2js(HttpRequest req, String[] args)
     if (requestedType == null) {
         requestedType = "js";
     }
-    Model scripts = defineScripts();
-    Map[] m = scripts.get("name", {
-        "user": user,
-        "id": id
-    });
-    if (m.getSize() != 1) {
+//    Model scripts = defineScripts();
+    Connection con = new Connection(DBPATH);
+//    Map[] m = scripts.get("name", {
+//        "user": user,
+//        "id": id
+//    });
+    ResultSet r = con.query("select name from scripts where user=" + user + " and id=" + id);
+    if (r.next() == false) {
         return null;
-    }
-    InputStream body = FileStorage.openJS(user, id);
+//     }
+    FILE body = FileStorage.openJS(user, id);
     String scriptpath = body.path;
     HttpResponse res = new HttpResponse();
     String k2jspath = "/usr/local/bin/konoha2js";
@@ -393,7 +406,7 @@ HttpResponse konoha2js(HttpRequest req, String[] args)
         //String ret = exec(k2jspath + " -j -r -i " + path);
         //ret = "<script type=\"text/javascript\">\n" + ret + "\n</script>\n</head>";
         //String replacetxt = "</head>";
-        InputStream html = FileStorage.openHTML(user, id);
+        FILE html = FileStorage.openHTML(user, id);
         //res.content += html.read().decode().replace(replacetxt, ret);
         res.content = res.content + html.read();
         html.close();
@@ -419,18 +432,24 @@ HttpResponse konoha2js(HttpRequest req, String[] args)
     }
     else if (requestedType == "javac") {
         body.close();
-        Model scripts = defineScripts();
+//        Model scripts = defineScripts();
+        Connection con = new Connection(DBPATH);
         String scriptname;
-        Map[] m = scripts.get("name", {
-            "user": user,
-            "id": id
-        });
-        if (m.getSize() == 1) {
-            scriptname = m[0]["name"];
+//        Map[] m = scripts.get("name", {
+//            "user": user,
+//            "id": id
+//        });
+        ResultSet r = con.query("select name from scripts where user=" + user + " and id=" + id);
+//        if (m.getSize() == 1) {
+//            scriptname = m[0]["name"];
+//        }
+//        else {
+//            return null;
+//        }
+        if (r.next() == false) {
+        	return null;
         }
-        else {
-            return null;
-        }
+        scriptname = r.getString("name");
         String javacpath = "/usr/bin/javac -encoding UTF8";
         res["Content-Type"] = "application/json; charset=UTF-8";
         if (System.stat(FileStorage.root + user + "/javac") == null) {
@@ -478,7 +497,8 @@ HttpResponse konoha2js(HttpRequest req, String[] args)
         }
     }
     else if (requestedType == "download") {
-        String name = m[0]["name"];
+//        String name = m[0]["name"];
+    	name = r.getString("name");
         if (name != null && name != "") {
             res["Content-Type"] = "text/plain; charset=UTF-8";
             if (!(name.endsWith(".java"))) {
@@ -525,15 +545,26 @@ HttpResponse usertop(HttpRequest req, String[] args)
         tpl["Myself"] = 1;
     }
     Array codelist = [];
-    Model scripts = defineScripts();
-    foreach (Map m in scripts.get("id, name, date", {"user": user})) {
-        String id = m["id"];
-        String name = m["name"];
-        codelist.add({
-            "Id": id,
-            "Name": name.convert(to:durl),
-            "Date": m["date"]
-        });
+//    Model scripts = defineScripts();
+    Connection con = new Connection(DBPATH);
+    ResultSet r = con.query("select id and name and date from scripts where user=" + user);
+//    foreach (Map m in scripts.get("id, name, date", {"user": user})) {
+//        String id = m["id"];
+//        String name = m["name"];
+//        codelist.add({
+//            "Id": id,
+//            "Name": name.convert(to:durl),
+//            "Date": m["date"]
+//        });
+//    }
+    while (r.next() == true) {
+      String id = m["id"];
+      String name = m["name"];
+      codelist.add({
+          "Id": id,
+          "Name": name.convert(to:durl),
+          "Date": m["date"]
+      });
     }
     tpl["User"] = user;
     if (isAdminUser(user)) {
@@ -583,8 +614,8 @@ HttpResponse signup(HttpRequest req, String[] args)
     String username = req.params_post["username"];
     String password = req.params_post["password"];
     String email = req.params_post["email"];
-    Regex r = new Regex("^([\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4})?$");
-    Regex r2 = new Regex("^[a-zA-Z0-9_]{1,48}$");
+    RegExp r = new RegExp("^([\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4})?$");
+    RegExp r2 = new RegExp("^[a-zA-Z0-9_]{1,48}$");
     if (isReservedWord(username)) {
         Map error = {
             "Title": "Username is invalid.",
@@ -654,11 +685,13 @@ HttpResponse signup(HttpRequest req, String[] args)
         }
         return new HttpResponse(tpl.render(ctx));
     }
-    Model userinfo = defineUserinfo();
-    userinfo.add({
-        "id": user.id,
-        "email": email
-    });
+//    Model userinfo = defineUserinfo();
+//    userinfo.add({
+//        "id": user.id,
+//        "email": email
+//    });
+    Connection con = new Connection(DBPATH);
+    con.query("insert into userinfo (id, email) values(" + user.id ", " + email + ")");
     FileStorage.mkdir(username, 0755);
     req.session["id"] = user.name;
     if (TRACE_USER) {
@@ -679,7 +712,7 @@ HttpResponse check(HttpRequest req, String[] args)
     res["Content-Type"] = "application/json; charset=utf-8";
     Json j = new Json();
     if(args[1] == "username"){
-        Regex r = new Regex("^[a-zA-Z0-9_]{1,48}$");
+        RegExp r = new RegExp("^[a-zA-Z0-9_]{1,48}$");
         String username = req.params_get["username"];
         if (User.hasUser(username) ||
                 isReservedWord(username)) {
@@ -696,7 +729,7 @@ HttpResponse check(HttpRequest req, String[] args)
         }
     }
     else if(args[1] == "email"){
-        Regex r = new Regex("^([\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4})?$");
+        RegExp r = new RegExp("^([\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4})?$");
         String email = req.params_get["email"];
         if (email.search(r) < 0) {
             j["error"] = true;
@@ -742,11 +775,11 @@ HttpResponse save(HttpRequest req, String[] args)
         return res;
     }
     Map m = new Map();
-    OutputStream ous_readme = FileStorage.newReadme(user, id);
-    OutputStream ous_js = FileStorage.newJS(user, id);
-    OutputStream ous_ks = FileStorage.newKS(user, id);
-    OutputStream ous_html = FileStorage.newHTML(user, id);
-    OutputStream ous_history = FileStorage.newHistory(user, id);
+    FILE ous_readme = FileStorage.newReadme(user, id);
+    FILE ous_js = FileStorage.newJS(user, id);
+    FILE ous_ks = FileStorage.newKS(user, id);
+    FILE ous_html = FileStorage.newHTML(user, id);
+    FILE ous_history = FileStorage.newHistory(user, id);
     String git_path = (to String)ous_readme.path;
     git_path = git_path.substring(0, git_path.lastIndexOf("/"));
     Git g = new Git(git_path);
@@ -840,11 +873,12 @@ HttpResponse create(HttpRequest req, String[] args)
         }
         return redirect("/aspen/");
     }
-    Model scripts = defineScripts();
-    OutputStream ous_readme = FileStorage.newReadme(sessionid, id);
-    OutputStream ous_js = FileStorage.newJS(sessionid, id);
-    OutputStream ous_ks = FileStorage.newKS(sessionid, id);
-    OutputStream ous_html = FileStorage.newHTML(sessionid, id);
+//  Model scripts = defineScripts();
+    Connection con = new Connection(DBPATH);
+    FILE ous_readme = FileStorage.newReadme(sessionid, id);
+    FILE ous_js = FileStorage.newJS(sessionid, id);
+    FILE ous_ks = FileStorage.newKS(sessionid, id);
+    FILE ous_html = FileStorage.newHTML(sessionid, id);
     String git_path = ous_readme.path.toString();
     git_path = git_path.substring(0, git_path.lastIndexOf("/"));
     Git g = new Git(git_path);
@@ -867,11 +901,13 @@ HttpResponse create(HttpRequest req, String[] args)
         "html": html_tpl.convert(to:url),
         "date": (to String)d
     });
-    Model counter = defineCounter();
-    counter.set({
-        "page": sessionid + "/" + id,
-        "count": 0
-    });
+//    Model counter = defineCounter();
+//    counter.set({
+//        "page": sessionid + "/" + id,
+//        "count": 0
+//    });
+    String page = sessionid + "/" + id;
+    con.query("insert into counter (page, count) values(" + page + ", " + 0 + ")");
     if (TRACE_USER) {
         Map m = new Map();
         m["id"] = req.session["id"];
@@ -1007,38 +1043,55 @@ HttpResponse contact(HttpRequest req, String[] args)
         return inquire(req, args);
     }
     Template tpl = getDefaultTemplate(req);
-    Model inquiries = defineInquiries();
+//    Model inquiries = defineInquiries();
+    Connection con = new Connection(DBPATH);
     if (args[1].toInt() != 0) {
-        Map[] m = inquiries.get("*", {
-            "id": args[1].toInt()
-        });
-        if (m.getSize() == 1) {
-            Map topic = {};
-            topic["Title"] = (m[0]["title"].toString())/*.convert(to:durl)*/;
-            topic["Name"] = m[0]["name"];
-            topic["Contents"] = (m[0]["contents"].toSting())/*.convert(to:durl)*/;
-            topic["Date"] = m[0]["date"];
-            tpl["Topic"] = topic;
-            TemplateContext ctx = new TemplateContext();
-            ctx.parseFile("topic.cs");
-            return new HttpResponse(tpl.render(ctx));
-        }
-        else {
+//        Map[] m = inquiries.get("*", {
+//            "id": args[1].toInt()
+//        });
+        ResultSet r = con.query("select * from inquiries where id=" + args[1].toInt());
+        if (r.next() == false) {
             return null;
         }
+        Map topic = {};
+//        topic["Title"] = (m[0]["title"].toString())/*.convert(to:durl)*/;
+//        topic["Name"] = m[0]["name"];
+//        topic["Contents"] = (m[0]["contents"].toSting())/*.convert(to:durl)*/;
+//        topic["Date"] = m[0]["date"];
+        topic["Title"] = r.getString("title");
+        topic["Name"] = r.getString("name");
+        topic["Contents"] = r.getString("contents");
+        topic["Date"] = r.getString("date");
+        tpl["Topic"] = topic;
+        TemplateContext ctx = new TemplateContext();
+        ctx.parseFile("topic.cs");
+        return new HttpResponse(tpl.render(ctx));
+
     }
     Array threadlist = [];
-    foreach (Map m in inquiries.get("id, title, name, date")) {
-        int id = m["id"];
-        String title = (m["title"].toString())/*.convert(to:durl)*/;
-        String name = m["name"];
-        String date = m["date"];
-        threadlist.add({
-            "Id": id.toString(),
-            "Title": title,
-            "Name": name,
-            "Date": date
-        });
+//    foreach (Map m in inquiries.get("id, title, name, date")) {
+//        int id = m["id"];
+//        String title = (m["title"].toString())/*.convert(to:durl)*/;
+//        String name = m["name"];
+//        String date = m["date"];
+//        threadlist.add({
+//            "Id": id.toString(),
+//            "Title": title,
+//            "Name": name,
+//            "Date": date
+//        });
+//    }
+    while (r.next() == true) {
+      int id = r.getInt("id");
+      String title = r.getString("title");
+      String name = r.getString("name");
+      String date = r.getString("date");
+      threadlist.add({
+          "Id": id.toString(),
+          "Title": title,
+          "Name": name,
+          "Date": date
+      });
     }
     tpl["Threads"] = threadlist;
     TemplateContext ctx = new TemplateContext();
@@ -1067,8 +1120,10 @@ HttpResponse update(HttpRequest req, String[] args)
         j["value"] = original_value;
         return new HttpResponse(j.stringify());
     }
-    Model scripts = defineScripts();
-    scripts.update({"name": update_value.convert(to:url)}, {"user": req.session["id"], "id": script_id});
+//    Model scripts = defineScripts();
+//    scripts.update({"name": update_value.convert(to:url)}, {"user": req.session["id"], "id": script_id});
+    Connection con = new Connection(DBPATH);
+    con.query("update scripts set name=" + update_value/*.convert(to:url)*/ + " where user=" + req.session["id"] + " and id=" + script_id);
     if (TRACE_USER) {
         Map m = new Map();
         m["id"] = req.session["id"];
@@ -1121,16 +1176,28 @@ HttpResponse copylist(HttpRequest req, String[] args)
         return redirect("/aspen/");
     }
     Array codelist = [];
-    Model scripts = defineScripts();
-    foreach (Map m in scripts.get("user, id, name, date")) {
-        String id = m["id"];
-        String name = m["name"];
-        codelist.add({
-            "User": m["user"],
-            "Id": id,
-            "Name": name/*.convert(to:durl)*/,
-            "Date": m["date"]
-        });
+//    Model scripts = defineScripts();
+    Connection con = new Connection(DBPATH);
+    ResultSet r = con.query("select user, id, name, date");
+//    foreach (Map m in scripts.get("user, id, name, date")) {
+//        String id = m["id"];
+//        String name = m["name"];
+//        codelist.add({
+//            "User": m["user"],
+//            "Id": id,
+//            "Name": name/*.convert(to:durl)*/,
+//            "Date": m["date"]
+//        });
+//    }
+    while (r.next == true) {
+      String id = r.getString("id");
+      String name = r.getString("name");
+      codelist.add({
+          "User": r.getString("user"),
+          "Id": id,
+          "Name": name/*.convert(to:durl)*/,
+          "Date": r.getString("date")
+      });
     }
     TemplateContext ctx = new TemplateContext();
     ctx.parseFile("copylist.cs");
@@ -1146,33 +1213,4 @@ HttpResponse console(HttpRequest req, String[] args)
     return new HttpResponse(tpl.render(ctx));
 }
 
-Url.patterns = [
-    (new Regex("^aspen/$"), top),
-    (new Regex("^aspen/about/$"), about),
-    (new Regex("^aspen/admin/copylist/$"), copylist),
-    (new Regex("^aspen/admin/console/$"), console),
-    (new Regex("^aspen/admin/$"), admintop),
-    (new Regex("^aspen/contact/.*$"), contact),
-    (new Regex("^aspen/check/.+$"), check),
-    (new Regex("^aspen/help/$"), help),
-    (new Regex("^aspen/action/create$"), create),
-    (new Regex("^aspen/action/delete$"), delete),
-    (new Regex("^aspen/action/login$"), login),
-    (new Regex("^aspen/action/logout$"), logout),
-    (new Regex("^aspen/action/save$"), save),
-    (new Regex("^aspen/action/search$"), search),
-    (new Regex("^aspen/action/signup$"), signup),
-    (new Regex("^aspen/action/update$"), update),
-    //(new Regex("^aspen/action/setting$"), preference),
-    (new Regex("^aspen/.+$"), usertop)
-];
-
-String InputStream.read() {
-	String ret = "";
-	String s = this.readLine();
-	while(s != null) {
-		ret = ret + s + "\n";
-		s = this.readLine();
-	}
-	return ret;
-}
+//urlpatterns = [new Tuple(RegExp("^aspen/$"),top), new Tuple(RegExp("^aspen/about/$"),about), new Tuple(RegExp("^aspen/admin/copylist/$"),copylist), new Tuple(RegExp("^aspen/admin/console/$"),console), new Tuple(RegExp("^aspen/admin/$"),admintop), new Tuple(RegExp("^aspen/contact/.*$"),contact), new Tuple(RegExp("^aspen/check/.+$"),check), new Tuple(RegExp("^aspen/help/$"),help), new Tuple(RegExp("^aspen/action/create$"),create), new Tuple(RegExp("^aspen/action/delete$"),delete), new Tuple(RegExp("^aspen/action/login$"),login), new Tuple(RegExp("^aspen/action/logout$"),logout), new Tuple(RegExp("^aspen/action/save$"),save), new Tuple(RegExp("^aspen/action/search$"),search), new Tuple(RegExp("^aspen/action/signup$"),signup), new Tuple(RegExp("^aspen/action/update$"),update), /*new Tuple(RegExp("^aspen/action/setting$"),preference),*/ new Tuple(RegExp("^aspen/.+$"),usertop)];
